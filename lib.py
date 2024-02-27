@@ -42,7 +42,7 @@ def calculate_results(a, b, c, d, position, theta1):
 	return (theta1, theta2, theta3)
 
 # Loops through all possible angles, calculates the results, and aggregates them into arrays
-def analyze_mechanism(a, b, c, d, resolution=360, position="OPEN"):
+def analyze_mechanism(a, b, c, d, resolution=360, position="OPEN", convert=True):
 
 	# Output arrays
 	theta1_array = []
@@ -54,6 +54,12 @@ def analyze_mechanism(a, b, c, d, resolution=360, position="OPEN"):
 
 		# Calculate the results
 		(theta1, theta2, theta3) = calculate_results(a, b, c, d, position, theta1)
+
+		# Convert units if specified
+		if convert:
+			theta1 = math.degrees(theta1)
+			theta2 = math.degrees(theta2)
+			theta3 = math.degrees(theta3)
 
 		# Append to the output arrays
 		theta1_array.append(theta1)
