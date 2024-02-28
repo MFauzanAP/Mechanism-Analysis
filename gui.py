@@ -1,31 +1,53 @@
 import math
 from dearpygui import dearpygui as dpg
 
+from helpers import angle, calculate_end_point, magnitude
+
 # Constants
 WINDOW_WIDTH = 1600		# Width of the window
 WINDOW_HEIGHT = 900		# Height of the window
-TAB_HEIGHT = 380		# Height of the settings and plot tabs at the bottom of the window
-SCALE = 50				# Scale of the drawing in pixels per unit
+TAB_WIDTH = 420			# Width of the plot tabs at the bottom of the window
+TAB_HEIGHT = 400		# Height of the settings and plot tabs at the bottom of the window
 RESOLUTION = 360		# How many angles should be calculated?
 POSITION = "crossed"	# "open" or "crossed" positions for the linkage
 
 # Colors
 RED = (255, 0, 0, 255)
 BLUE = (0, 0, 255, 255)
+BROWN = (139, 69, 19, 255)
 GREEN = (0, 255, 0, 255)
 YELLOW = (255, 255, 0, 255)
 GREY = (150, 150, 150, 255)
 
-# Thicknesses
+# Sizes
+LINK_SCALE = 50
 LINK_THICKNESS = 4
+VELOCITY_SCALE = 5
+VELOCITY_THICKNESS = 2
 CIRCLE_THICKNESS = 8
 
 # Create or update mechanism drawing window
-def update_mechanism_drawing(a, b, c, d, theta1, theta2, theta3):
+def update_mechanism_drawing(
+	a, 
+	b,
+	c,
+	d,
+	theta1,
+	theta2,
+	theta3,
+	theta4,
+	omega1,
+	omega2,
+	omega3,
+	velocityA,
+	velocityB,
+	velocityBA,
+):
 	with dpg.window(
 		label="Mechanism Drawing",
 		width=WINDOW_WIDTH,
 		height=WINDOW_HEIGHT - TAB_HEIGHT,
+		pos=(TAB_WIDTH, 0),
 		no_resize=True,
 		no_close=True,
 		no_move=True,
@@ -34,13 +56,21 @@ def update_mechanism_drawing(a, b, c, d, theta1, theta2, theta3):
 		with dpg.drawlist(width=WINDOW_WIDTH, height=WINDOW_HEIGHT - TAB_HEIGHT) as drawlist:
 
 			# Calculate offset
-			offset = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
-			index = 89
+			offset = (WINDOW_WIDTH * 0.3, (WINDOW_HEIGHT - TAB_HEIGHT) * 0.75)
+			index = 130
 
-			# Draw link A
+			# Draw ground link (D)
+			with dpg.draw_layer(tag="link_d"):
+				d1 = offset
+				d2 = calculate_end_point(d1, d*LINK_SCALE, theta4)
+				dpg.draw_line(d1, d2, color=GREY, thickness=LINK_THICKNESS)
+				dpg.draw_circle(d1, 3, color=GREY, thickness=CIRCLE_THICKNESS)
+				dpg.draw_circle(d2, 3, color=GREY, thickness=CIRCLE_THICKNESS)
+
+			# Draw input link (A)
 			with dpg.draw_layer(tag="link_a"):
 				a1 = offset
-				a2 = (offset[0] + a*math.cos(math.radians(theta1[index]))*SCALE, offset[1] - a*math.sin(math.radians(theta1[index]))*SCALE)
+				a2 = calculate_end_point(a1, a*LINK_SCALE, theta1[index])
 				dpg.draw_line(a1, a2, color=RED, thickness=LINK_THICKNESS)
 				dpg.draw_circle(a1, 3, color=RED, thickness=CIRCLE_THICKNESS)
 				dpg.draw_circle(a2, 3, color=RED, thickness=CIRCLE_THICKNESS)
@@ -48,46 +78,59 @@ def update_mechanism_drawing(a, b, c, d, theta1, theta2, theta3):
 			# Draw link B
 			with dpg.draw_layer(tag="link_b"):
 				b1 = a2
-				b2 = (b1[0] + b*math.cos(math.radians(theta3[index]))*SCALE, b1[1] - b*math.sin(math.radians(theta3[index]))*SCALE)
+				b2 = calculate_end_point(b1, b*LINK_SCALE, theta3[index])
 				dpg.draw_line(b1, b2, color=BLUE, thickness=LINK_THICKNESS)
 				dpg.draw_circle(b1, 3, color=BLUE, thickness=CIRCLE_THICKNESS)
 				dpg.draw_circle(b2, 3, color=BLUE, thickness=CIRCLE_THICKNESS)
 
 			# Draw link C
 			with dpg.draw_layer(tag="link_c"):
-				c1 = b2
-				c2 = (c1[0] - c*math.cos(math.radians(theta2[index]))*SCALE, c1[1] + c*math.sin(math.radians(theta2[index]))*SCALE)
+				c1 = d2
+				c2 = b2
 				dpg.draw_line(c1, c2, color=YELLOW, thickness=LINK_THICKNESS)
 				dpg.draw_circle(c1, 3, color=YELLOW, thickness=CIRCLE_THICKNESS)
 				dpg.draw_circle(c2, 3, color=YELLOW, thickness=CIRCLE_THICKNESS)
 
-			# Draw link D
-			with dpg.draw_layer(tag="link_d"):
-				d1 = c2
-				d2 = a1
-				dpg.draw_line(d1, d2, color=GREY, thickness=LINK_THICKNESS)
-				dpg.draw_circle(d1, 3, color=GREY, thickness=CIRCLE_THICKNESS)
-				dpg.draw_circle(d2, 3, color=GREY, thickness=CIRCLE_THICKNESS)
+			# Draw the velocity arrows
+			with dpg.draw_layer(tag="velocity_arrows"):
+				vA = velocityA[index]
+				vB = velocityB[index]
+				vBA = velocityBA[index]
+
+				vA1 = a2
+				vA2 = calculate_end_point(vA1, magnitude(vA)*VELOCITY_SCALE, angle(vA))
+				vB1 = b2
+				vB2 = calculate_end_point(vB1, magnitude(vB)*VELOCITY_SCALE, angle(vB))
+				vBA1 = c2
+				vBA2 = calculate_end_point(vBA1, magnitude(vBA)*VELOCITY_SCALE, angle(vBA))
+
+				dpg.draw_arrow(vA2, vA1, color=BROWN, thickness=VELOCITY_THICKNESS)
+				dpg.draw_arrow(vB2, vB1, color=BROWN, thickness=VELOCITY_THICKNESS)
+				dpg.draw_arrow(vBA2, vBA1, color=GREEN, thickness=VELOCITY_THICKNESS)
 
 # Create settings window
-def create_settings():
+def create_settings(a, b, c, d, theta4, omega1):
 	with dpg.window(
 		label="Mechanism Settings",
-		width=300,
-		height=TAB_HEIGHT,
-		pos=(0, WINDOW_HEIGHT - TAB_HEIGHT),
+		width=TAB_WIDTH,
+		height=WINDOW_HEIGHT - TAB_HEIGHT,
+		pos=(0, 0),
 		no_resize=True,
 		no_close=True,
 		no_move=True,
 		no_collapse=True,
 	) as mechanism_settings:
 		dpg.add_text("Link Lengths")
-		dpg.add_slider_float(label="a", default_value=a, max_value=10)
-		dpg.add_slider_float(label="b", default_value=b, max_value=10)
-		dpg.add_slider_float(label="c", default_value=c, max_value=10)
-		dpg.add_slider_float(label="d", default_value=d, max_value=10)
+		dpg.add_slider_float(label="Input Link A (m)", default_value=a, max_value=10)
+		dpg.add_slider_float(label="B (m)", default_value=b, max_value=10)
+		dpg.add_slider_float(label="C (m)", default_value=c, max_value=10)
+		dpg.add_slider_float(label="Ground Link D (m)", default_value=d, max_value=10)
+		dpg.add_text("Ground Angle")
+		dpg.add_slider_float(label="degree", default_value=theta4, min_value=0, max_value=360)
+		dpg.add_text("Input Speed")
+		dpg.add_slider_float(label="rpm", default_value=omega1, min_value=5, max_value=10)
 		dpg.add_text("Analysis Settings")
-		dpg.add_slider_int(label="Resolution", default_value=RESOLUTION, max_value=720)
+		dpg.add_slider_int(label="Resolution", default_value=RESOLUTION, max_value=500)
 		dpg.add_radio_button(["Open", "Crossed"], label="Position", default_value=0)
 		dpg.add_button(label="Analyze")
 
@@ -95,8 +138,9 @@ def create_settings():
 def create_position_plot(theta1, theta2, theta3):
 	with dpg.window(
 		label="Position Analysis",
+		width=TAB_WIDTH,
 		height=TAB_HEIGHT,
-		pos=(300, WINDOW_HEIGHT - TAB_HEIGHT),
+		pos=(0, WINDOW_HEIGHT - TAB_HEIGHT),
 		no_resize=True,
 		no_close=True,
 		no_move=True,
@@ -104,11 +148,36 @@ def create_position_plot(theta1, theta2, theta3):
 	) as position_analysis:
 		with dpg.plot():
 			dpg.add_plot_legend()
-			dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle")
+			dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (rad)")
 			dpg.set_axis_limits(dpg.last_item(), 0, 360)
-			dpg.add_plot_axis(dpg.mvYAxis, label="Output Angle", tag="y_axis")
-			dpg.add_line_series(theta1, theta2, label="Theta 2", parent="y_axis")
-			dpg.add_line_series(theta1, theta3, label="Theta 3", parent="y_axis")
+			dpg.add_plot_axis(dpg.mvYAxis, label="Output Angle (rad)", tag="position_y_axis")
+			dpg.add_line_series(theta1, theta2, label="Theta 2", parent="position_y_axis")
+			dpg.add_line_series(theta1, theta3, label="Theta 3", parent="position_y_axis")
+
+# Create velocity plot window
+def create_velocity_plot(theta1, velocityA, velocityB, velocityBA):
+	with dpg.window(
+		label="Velocity Analysis",
+		width=TAB_WIDTH,
+		height=TAB_HEIGHT,
+		pos=(TAB_WIDTH, WINDOW_HEIGHT - TAB_HEIGHT),
+		no_resize=True,
+		no_close=True,
+		no_move=True,
+		no_collapse=True,
+	) as velocity_analysis:
+		vA = [ magnitude(v) for v in velocityA ]
+		vB = [ magnitude(v) for v in velocityB ]
+		vBA = [ magnitude(v) for v in velocityBA ]
+
+		with dpg.plot():
+			dpg.add_plot_legend()
+			dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (rad)")
+			dpg.set_axis_limits(dpg.last_item(), 0, 360)
+			dpg.add_plot_axis(dpg.mvYAxis, label="Output Velocity (m/s)", tag="velocity_y_axis")
+			dpg.add_line_series(theta1, vA, label="Velocity A", parent="velocity_y_axis")
+			dpg.add_line_series(theta1, vB, label="Velocity B", parent="velocity_y_axis")
+			dpg.add_line_series(theta1, vBA, label="Velocity BA", parent="velocity_y_axis")
 
 # Setup PyGUI
 def setup_app():
@@ -117,10 +186,43 @@ def setup_app():
 	dpg.setup_dearpygui()
 
 # Run PyGUI
-def run_app(a, b, c, d, theta1, theta2, theta3):
+def run_app(
+	a, 
+	b,
+	c,
+	d,
+	theta1,
+	theta2,
+	theta3,
+	theta4,
+	omega1,
+	omega2,
+	omega3,
+	velocityA,
+	velocityB,
+	velocityBA,
+):
 	setup_app()
 
-	update_mechanism_drawing(a, b, c, d, theta1, theta2, theta3)
+	create_settings(a, b, c, d, theta4, 10)
+	create_position_plot(theta1, theta2, theta3)
+	create_velocity_plot(theta1, velocityA, velocityB, velocityBA)
+	update_mechanism_drawing(
+		a, 
+		b,
+		c,
+		d,
+		theta1,
+		theta2,
+		theta3,
+		theta4,
+		omega1,
+		omega2,
+		omega3,
+		velocityA,
+		velocityB,
+		velocityBA,
+	)
 
 	dpg.show_viewport()
 	dpg.start_dearpygui()

@@ -29,8 +29,23 @@ def calculate_position(a, b, c, d, position, theta1):
 	# Return the calculated angles
 	return (theta2, theta3)
 
+# Calculate omega 2 and 3, and linear velocity A, B, and BA
+def calculate_velocity(a, b, c, omega1, theta1, theta2, theta3):
+
+	# Calculate omega 2 and 3
+	omega2 = omega1 * (a / b) * (math.sin(theta3 - theta1) / math.sin(theta2 - theta3))
+	omega3 = omega1 * (a / c) * (math.sin(theta1 - theta2) / math.sin(theta3 - theta2))
+
+	# Calculate linear velocity A, B, and BA
+	velocityA = (a * omega1 * -math.sin(theta1), a * omega1 * math.cos(theta1))
+	velocityB = (b * omega2 * -math.sin(theta2), b * omega2 * math.cos(theta2))
+	velocityBA = (c * omega3 * -math.sin(theta3), c * omega3 * math.cos(theta3))
+
+	# Return the calculated velocities
+	return (omega2, omega3, velocityA, velocityB, velocityBA)
+
 # Calculate and aggregate position, velocity, and acceleration analysis results for the given input angle
-def calculate_results(a, b, c, d, position, theta1):
+def calculate_results(a, b, c, d, position, theta1, omega1):
 
 	# Convert to radians
 	theta1 = math.radians(theta1)
@@ -38,22 +53,48 @@ def calculate_results(a, b, c, d, position, theta1):
 	# Solve for position
 	(theta2, theta3) = calculate_position(a, b, c, d, position, theta1)
 
+	# Solve for velocity
+	(omega2, omega3, velocityA, velocityB, velocityBA) = calculate_velocity(a, b, c, omega1, theta1, theta2, theta3)
+
 	# Return the calculated angles
-	return (theta1, theta2, theta3)
+	return (
+		theta1,
+		theta2,
+		theta3,
+		omega2,
+		omega3,
+		velocityA,
+		velocityB,
+		velocityBA,
+	)
 
 # Loops through all possible angles, calculates the results, and aggregates them into arrays
-def analyze_mechanism(a, b, c, d, resolution=360, position="OPEN", convert=True):
+def analyze_mechanism(a, b, c, d, omega1, resolution=360, position="OPEN", convert=True):
 
 	# Output arrays
 	theta1_array = []
 	theta2_array = []
 	theta3_array = []
+	omega2_array = []
+	omega3_array = []
+	velocityA_array = []
+	velocityB_array = []
+	velocityBA_array = []
 
 	# Loop through all possible angles
 	for theta1 in linspace(1, 360, num=resolution):
 
 		# Calculate the results
-		(theta1, theta2, theta3) = calculate_results(a, b, c, d, position, theta1)
+		(
+			theta1,
+			theta2,
+			theta3,
+			omega2,
+			omega3,
+			velocityA,
+			velocityB,
+			velocityBA,
+		) = calculate_results(a, b, c, d, position, theta1, omega1)
 
 		# Convert units if specified
 		if convert:
@@ -65,6 +106,20 @@ def analyze_mechanism(a, b, c, d, resolution=360, position="OPEN", convert=True)
 		theta1_array.append(theta1)
 		theta2_array.append(theta2)
 		theta3_array.append(theta3)
+		omega2_array.append(omega2)
+		omega3_array.append(omega3)
+		velocityA_array.append(velocityA)
+		velocityB_array.append(velocityB)
+		velocityBA_array.append(velocityBA)
 
 	# Return the results
-	return (theta1_array, theta2_array, theta3_array)
+	return (
+		theta1_array,
+		theta2_array,
+		theta3_array,
+		omega2_array,
+		omega3_array,
+		velocityA_array,
+		velocityB_array,
+		velocityBA_array,
+	)
