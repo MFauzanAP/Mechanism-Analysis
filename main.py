@@ -20,6 +20,9 @@ omega1 = 10
 # Motor Acceleration (RPM/s)
 alpha1 = 0
 
+# Knife Offset
+knife_offset = 1
+
 # Analyze the mechanism
 (
 	theta1,
@@ -52,6 +55,7 @@ run_app(
 	b=b,
 	c=c,
 	d=d,
+	knife_offset=knife_offset,
 	theta1=theta1,
 	theta2=theta2,
 	theta3=theta3,

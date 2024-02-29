@@ -1,6 +1,4 @@
-import math
 from dearpygui import dearpygui as dpg
-
 from helpers import angle, calculate_end_point, magnitude
 
 # Constants
@@ -35,6 +33,7 @@ def update_mechanism_drawing(
 	b,
 	c,
 	d,
+	knife_offset,
 	theta1,
 	theta2,
 	theta3,
@@ -47,6 +46,7 @@ def update_mechanism_drawing(
 	velocityBA,
 ):
 	with dpg.window(
+		tag="mechanism_drawing",
 		label="Mechanism Drawing",
 		width=WINDOW_WIDTH,
 		height=WINDOW_HEIGHT - TAB_HEIGHT,
@@ -60,7 +60,7 @@ def update_mechanism_drawing(
 
 			# Calculate offset
 			offset = (WINDOW_WIDTH * 0.3, (WINDOW_HEIGHT - TAB_HEIGHT) * 0.75)
-			index = 130
+			index = 59
 
 			# Draw ground link (D)
 			with dpg.draw_layer(tag="link_d"):
@@ -94,6 +94,17 @@ def update_mechanism_drawing(
 				dpg.draw_circle(c1, 3, color=YELLOW, thickness=CIRCLE_THICKNESS)
 				dpg.draw_circle(c2, 3, color=YELLOW, thickness=CIRCLE_THICKNESS)
 
+			# Draw the knife
+			with dpg.draw_layer(tag="knife"):
+				kl1 = c2
+				kl2 = calculate_end_point(kl1, knife_offset*LINK_SCALE, theta3[index])
+				dpg.draw_line(kl1, kl2, color=YELLOW, thickness=LINK_THICKNESS)
+
+				k1 = kl2
+				k2 = calculate_end_point(k1, 2*LINK_SCALE, theta3[index])
+				k3 = calculate_end_point(k1, 0.5*LINK_SCALE, theta3[index] - 90)
+				dpg.draw_triangle(k1, k2, k3, color=BROWN, fill=BROWN)
+
 			# Draw the velocity arrows
 			with dpg.draw_layer(tag="velocity_arrows"):
 				vA = velocityA[index]
@@ -110,6 +121,9 @@ def update_mechanism_drawing(
 				dpg.draw_arrow(vA2, vA1, color=RED_50, thickness=VELOCITY_THICKNESS)
 				dpg.draw_arrow(vB2, vB1, color=BLUE_50, thickness=VELOCITY_THICKNESS)
 				dpg.draw_arrow(vBA2, vBA1, color=YELLOW_50, thickness=VELOCITY_THICKNESS)
+
+# Create arcs showing movement of crank and rocker links
+# def create_paths(a, c, theta1, theta3):
 
 # Create settings window
 def create_settings(a, b, c, d, theta4, omega1):
@@ -219,6 +233,7 @@ def run_app(
 	b,
 	c,
 	d,
+	knife_offset,
 	theta1,
 	theta2,
 	theta3,
@@ -243,20 +258,21 @@ def run_app(
 	create_velocity_plot(theta1, velocityA, velocityB, velocityBA)
 	create_acceleration_plot(theta1, accelerationA, accelerationB, accelerationBA)
 	update_mechanism_drawing(
-		a, 
-		b,
-		c,
-		d,
-		theta1,
-		theta2,
-		theta3,
-		theta4,
-		omega1,
-		omega2,
-		omega3,
-		velocityA,
-		velocityB,
-		velocityBA,
+		a=a, 
+		b=b,
+		c=c,
+		d=d,
+		knife_offset=knife_offset,
+		theta1=theta1,
+		theta2=theta2,
+		theta3=theta3,
+		theta4=theta4,
+		omega1=omega1,
+		omega2=omega2,
+		omega3=omega3,
+		velocityA=velocityA,
+		velocityB=velocityB,
+		velocityBA=velocityBA,
 	)
 
 	dpg.show_viewport()
