@@ -6,16 +6,19 @@ RESOLUTION = 360		# How many angles should be calculated?
 POSITION = "crossed"	# "open" or "crossed" positions for the linkage
 
 # Link Lengths
-a = 2
-b = 6
-c = 5
-d = 5
+a = 1
+b = 4.5
+c = 2.5
+d = 4.5
 
 # Ground Angle
 theta4 = 0
 
 # Input Speed (RPM)
 omega1 = 10
+
+# Motor Acceleration (RPM/s)
+alpha1 = 0
 
 # Analyze the mechanism
 (
@@ -24,27 +27,47 @@ omega1 = 10
 	theta3,
 	omega2,
 	omega3,
+	alpha2,
+	alpha3,
 	velocityA,
 	velocityB,
 	velocityBA,
-) = analyze_mechanism(a, b, c, d, omega1, RESOLUTION, POSITION)
+	accelerationA,
+	accelerationB,
+	accelerationBA,
+) = analyze_mechanism(
+	a=a,
+	b=b,
+	c=c,
+	d=d,
+	omega1=omega1,
+	alpha1=alpha1,
+	resolution=RESOLUTION,
+	position=POSITION,
+)
 
 # Run the app
 run_app(
-	a, 
-	b,
-	c,
-	d,
-	theta1,
-	theta2,
-	theta3,
-	theta4,
-	omega1,
-	omega2,
-	omega3,
-	velocityA,
-	velocityB,
-	velocityBA,
+	a=a, 
+	b=b,
+	c=c,
+	d=d,
+	theta1=theta1,
+	theta2=theta2,
+	theta3=theta3,
+	theta4=theta4,
+	omega1=omega1,
+	omega2=omega2,
+	omega3=omega3,
+	alpha1=alpha1,
+	alpha2=alpha2,
+	alpha3=alpha3,
+	velocityA=velocityA,
+	velocityB=velocityB,
+	velocityBA=velocityBA,
+	accelerationA=accelerationA,
+	accelerationB=accelerationB,
+	accelerationBA=accelerationBA,
 )
 
 # Plot the results

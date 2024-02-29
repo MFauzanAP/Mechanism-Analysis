@@ -13,17 +13,20 @@ POSITION = "crossed"	# "open" or "crossed" positions for the linkage
 
 # Colors
 RED = (255, 0, 0, 255)
+RED_50 = (138, 14, 14, 255)
 BLUE = (0, 0, 255, 255)
+BLUE_50 = (58, 137, 222, 255)
 BROWN = (139, 69, 19, 255)
 GREEN = (0, 255, 0, 255)
 YELLOW = (255, 255, 0, 255)
+YELLOW_50 = (138, 108, 14, 255)
 GREY = (150, 150, 150, 255)
 
 # Sizes
 LINK_SCALE = 50
-LINK_THICKNESS = 4
+LINK_THICKNESS = 3
 VELOCITY_SCALE = 5
-VELOCITY_THICKNESS = 2
+VELOCITY_THICKNESS = 6
 CIRCLE_THICKNESS = 8
 
 # Create or update mechanism drawing window
@@ -78,7 +81,7 @@ def update_mechanism_drawing(
 			# Draw link B
 			with dpg.draw_layer(tag="link_b"):
 				b1 = a2
-				b2 = calculate_end_point(b1, b*LINK_SCALE, theta3[index])
+				b2 = calculate_end_point(b1, b*LINK_SCALE, theta2[index])
 				dpg.draw_line(b1, b2, color=BLUE, thickness=LINK_THICKNESS)
 				dpg.draw_circle(b1, 3, color=BLUE, thickness=CIRCLE_THICKNESS)
 				dpg.draw_circle(b2, 3, color=BLUE, thickness=CIRCLE_THICKNESS)
@@ -104,9 +107,9 @@ def update_mechanism_drawing(
 				vBA1 = c2
 				vBA2 = calculate_end_point(vBA1, magnitude(vBA)*VELOCITY_SCALE, angle(vBA))
 
-				dpg.draw_arrow(vA2, vA1, color=BROWN, thickness=VELOCITY_THICKNESS)
-				dpg.draw_arrow(vB2, vB1, color=BROWN, thickness=VELOCITY_THICKNESS)
-				dpg.draw_arrow(vBA2, vBA1, color=GREEN, thickness=VELOCITY_THICKNESS)
+				dpg.draw_arrow(vA2, vA1, color=RED_50, thickness=VELOCITY_THICKNESS)
+				dpg.draw_arrow(vB2, vB1, color=BLUE_50, thickness=VELOCITY_THICKNESS)
+				dpg.draw_arrow(vBA2, vBA1, color=YELLOW_50, thickness=VELOCITY_THICKNESS)
 
 # Create settings window
 def create_settings(a, b, c, d, theta4, omega1):
@@ -148,9 +151,9 @@ def create_position_plot(theta1, theta2, theta3):
 	) as position_analysis:
 		with dpg.plot():
 			dpg.add_plot_legend()
-			dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (rad)")
+			dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 			dpg.set_axis_limits(dpg.last_item(), 0, 360)
-			dpg.add_plot_axis(dpg.mvYAxis, label="Output Angle (rad)", tag="position_y_axis")
+			dpg.add_plot_axis(dpg.mvYAxis, label="Output Angle (degree)", tag="position_y_axis")
 			dpg.add_line_series(theta1, theta2, label="Theta 2", parent="position_y_axis")
 			dpg.add_line_series(theta1, theta3, label="Theta 3", parent="position_y_axis")
 
@@ -172,12 +175,37 @@ def create_velocity_plot(theta1, velocityA, velocityB, velocityBA):
 
 		with dpg.plot():
 			dpg.add_plot_legend()
-			dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (rad)")
+			dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 			dpg.set_axis_limits(dpg.last_item(), 0, 360)
 			dpg.add_plot_axis(dpg.mvYAxis, label="Output Velocity (m/s)", tag="velocity_y_axis")
 			dpg.add_line_series(theta1, vA, label="Velocity A", parent="velocity_y_axis")
 			dpg.add_line_series(theta1, vB, label="Velocity B", parent="velocity_y_axis")
 			dpg.add_line_series(theta1, vBA, label="Velocity BA", parent="velocity_y_axis")
+
+# Create acceleration plot window
+def create_acceleration_plot(theta1, accelerationA, accelerationB, accelerationBA):
+	with dpg.window(
+		label="Acceleration Analysis",
+		width=TAB_WIDTH,
+		height=TAB_HEIGHT,
+		pos=(2*TAB_WIDTH, WINDOW_HEIGHT - TAB_HEIGHT),
+		no_resize=True,
+		no_close=True,
+		no_move=True,
+		no_collapse=True,
+	) as acceleration_analysis:
+		aA = [ magnitude(a) for a in accelerationA ]
+		aB = [ magnitude(a) for a in accelerationB ]
+		aBA = [ magnitude(a) for a in accelerationBA ]
+
+		with dpg.plot():
+			dpg.add_plot_legend()
+			dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+			dpg.set_axis_limits(dpg.last_item(), 0, 360)
+			dpg.add_plot_axis(dpg.mvYAxis, label="Output Acceleration (m/s^2)", tag="acceleration_y_axis")
+			dpg.add_line_series(theta1, aA, label="Acceleration A", parent="acceleration_y_axis")
+			dpg.add_line_series(theta1, aB, label="Acceleration B", parent="acceleration_y_axis")
+			dpg.add_line_series(theta1, aBA, label="Acceleration BA", parent="acceleration_y_axis")
 
 # Setup PyGUI
 def setup_app():
@@ -187,7 +215,7 @@ def setup_app():
 
 # Run PyGUI
 def run_app(
-	a, 
+	a,
 	b,
 	c,
 	d,
@@ -198,15 +226,22 @@ def run_app(
 	omega1,
 	omega2,
 	omega3,
+	alpha1,
+	alpha2,
+	alpha3,
 	velocityA,
 	velocityB,
 	velocityBA,
+	accelerationA,
+	accelerationB,
+	accelerationBA,
 ):
 	setup_app()
 
 	create_settings(a, b, c, d, theta4, 10)
 	create_position_plot(theta1, theta2, theta3)
 	create_velocity_plot(theta1, velocityA, velocityB, velocityBA)
+	create_acceleration_plot(theta1, accelerationA, accelerationB, accelerationBA)
 	update_mechanism_drawing(
 		a, 
 		b,
