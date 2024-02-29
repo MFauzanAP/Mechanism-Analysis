@@ -1,5 +1,4 @@
 import math
-import time
 from lib import analyze_mechanism
 from dearpygui import dearpygui as dpg
 from helpers import angle, calculate_end_point, magnitude
@@ -26,7 +25,7 @@ class App:
 	# Sizes
 	LINK_SCALE = 50
 	LINK_THICKNESS = 3
-	VELOCITY_SCALE = 5
+	VELOCITY_SCALE = 1
 	VELOCITY_THICKNESS = 6
 	CIRCLE_THICKNESS = 8
 
@@ -146,15 +145,11 @@ class App:
 	def run(self):
 		dpg.show_viewport()
 		dpg.set_viewport_vsync(True)
-		start = time.time()
 		while dpg.is_dearpygui_running():
-			elapse_time = time.time() - start
-			start = elapse_time
-			print(elapse_time)
-			new_angle = self.current_angle + (self.omega1 * elapse_time)
-			new_angle_index = math.floor(new_angle / (360 / self.resolution))
+			new_angle = self.current_angle + (self.omega1 * dpg.get_delta_time()) % 360
+			new_angle_index = math.floor(new_angle / (360 / self.resolution)) % (self.resolution - 1)
 			self.current_angle = new_angle
-			self.angle_index = new_angle_index if new_angle_index < self.resolution - 1 else 0
+			self.angle_index = new_angle_index
 			self.update_mechanism()
 			dpg.render_dearpygui_frame()
 		dpg.destroy_context()
@@ -174,6 +169,46 @@ class App:
 		dpg.configure_item("link_a", p1=a1, p2=a2)
 		dpg.configure_item("joint_a1", center=a1)
 		dpg.configure_item("joint_a2", center=a2)
+
+		# Update link B
+		b1 = a2
+		b2 = calculate_end_point(b1, self.b*App.LINK_SCALE, self.theta2[self.angle_index])
+		dpg.configure_item("link_b", p1=b1, p2=b2)
+		dpg.configure_item("joint_b1", center=b1)
+		dpg.configure_item("joint_b2", center=b2)
+
+		# Update link C
+		c1 = d2
+		c2 = b2
+		dpg.configure_item("link_c", p1=c1, p2=c2)
+		dpg.configure_item("joint_c1", center=c1)
+		dpg.configure_item("joint_c2", center=c2)
+
+		# Update the knife
+		kl1 = c2
+		kl2 = calculate_end_point(kl1, self.knife_offset*App.LINK_SCALE, self.theta3[self.angle_index])
+		dpg.configure_item("knife_link", p1=kl1, p2=kl2)
+
+		k1 = kl2
+		k2 = calculate_end_point(k1, 2*App.LINK_SCALE, self.theta3[self.angle_index])
+		k3 = calculate_end_point(k1, 0.5*App.LINK_SCALE, self.theta3[self.angle_index] - 90)
+		dpg.configure_item("knife", p1=k1, p2=k2, p3=k3)
+
+		# Update the velocity arrows
+		vA = self.velocityA[self.angle_index]
+		vB = self.velocityB[self.angle_index]
+		vBA = self.velocityBA[self.angle_index]
+
+		vA1 = a2
+		vA2 = calculate_end_point(vA1, magnitude(vA)*App.VELOCITY_SCALE, angle(vA))
+		vB1 = b2
+		vB2 = calculate_end_point(vB1, magnitude(vB)*App.VELOCITY_SCALE, angle(vB))
+		vBA1 = c2
+		vBA2 = calculate_end_point(vBA1, magnitude(vBA)*App.VELOCITY_SCALE, angle(vBA))
+
+		dpg.configure_item("vA_arrow", p1=vA2, p2=vA1)
+		dpg.configure_item("vB_arrow", p1=vB2, p2=vB1)
+		dpg.configure_item("vBA_arrow", p1=vBA2, p2=vBA1)
 
 	# Create mechanism drawing window
 	def create_mechanism_drawing(self):
@@ -246,9 +281,9 @@ class App:
 					vBA1 = c2
 					vBA2 = calculate_end_point(vBA1, magnitude(vBA)*App.VELOCITY_SCALE, angle(vBA))
 
-					dpg.draw_arrow(vA2, vA1, color=App.RED_50, thickness=App.VELOCITY_THICKNESS)
-					dpg.draw_arrow(vB2, vB1, color=App.BLUE_50, thickness=App.VELOCITY_THICKNESS)
-					dpg.draw_arrow(vBA2, vBA1, color=App.YELLOW_50, thickness=App.VELOCITY_THICKNESS)
+					dpg.draw_arrow(vA2, vA1, tag="vA_arrow", color=App.RED_50, thickness=App.VELOCITY_THICKNESS)
+					dpg.draw_arrow(vB2, vB1, tag="vB_arrow", color=App.BLUE_50, thickness=App.VELOCITY_THICKNESS)
+					dpg.draw_arrow(vBA2, vBA1, tag="vBA_arrow", color=App.YELLOW_50, thickness=App.VELOCITY_THICKNESS)
 
 		# Save the mechanism drawing window
 		self.mechanism_drawing = mechanism_drawing
