@@ -38,8 +38,8 @@ def calculate_velocity(a, b, c, theta1, omega1, theta2, theta3):
 
 	# Calculate linear velocity A, B, and BA
 	velocityA = (a * omega1 * -math.sin(theta1), a * omega1 * math.cos(theta1))
-	velocityB = (b * omega2 * -math.sin(theta2), b * omega2 * math.cos(theta2))
-	velocityBA = (c * omega3 * -math.sin(theta3), c * omega3 * math.cos(theta3))
+	velocityBA = (b * omega2 * -math.sin(theta2), b * omega2 * math.cos(theta2))
+	velocityB = (c * omega3 * -math.sin(theta3), c * omega3 * math.cos(theta3))
 
 	# Return the calculated velocities
 	return (omega2, omega3, velocityA, velocityB, velocityBA)
@@ -61,8 +61,8 @@ def calculate_acceleration(a, b, c, theta1, omega1, alpha1, theta2, theta3, omeg
 
 	# Calculate linear acceleration A, B, and BA
 	accelerationA = (-a*alpha1*math.sin(theta1) - a*omega1**2*math.cos(theta1), a*alpha1*math.cos(theta1) - a*omega1**2*math.sin(theta1))
-	accelerationB = (-b*alpha2 *math.sin(theta2) - b*omega2**2*math.cos(theta2), b*alpha2*math.cos(theta2) - b*omega2**2*math.sin(theta2))
-	accelerationBA = (-c*alpha3*math.sin(theta3) - c*omega3**2*math.cos(theta3), c*alpha3*math.cos(theta3) - c*omega3**2*math.sin(theta3))
+	accelerationBA = (-b*alpha2 *math.sin(theta2) - b*omega2**2*math.cos(theta2), b*alpha2*math.cos(theta2) - b*omega2**2*math.sin(theta2))
+	accelerationB = (-c*alpha3*math.sin(theta3) - c*omega3**2*math.cos(theta3), c*alpha3*math.cos(theta3) - c*omega3**2*math.sin(theta3))
 
 	# Return the calculated accelerations
 	return (alpha2, alpha3, accelerationA, accelerationB, accelerationBA)
