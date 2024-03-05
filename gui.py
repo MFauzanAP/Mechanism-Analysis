@@ -6,8 +6,8 @@ from helpers import angle, calculate_end_point, magnitude
 class App:
 
 	# Constants
-	WINDOW_WIDTH = 1600		# Width of the window
-	WINDOW_HEIGHT = 900		# Height of the window
+	WINDOW_WIDTH = 1400		# Width of the window
+	WINDOW_HEIGHT = 800		# Height of the window
 	TAB_WIDTH = 420			# Width of the plot tabs at the bottom of the window
 	TAB_HEIGHT = 400		# Height of the settings and plot tabs at the bottom of the window
 
@@ -80,6 +80,7 @@ class App:
 	angle_index = 0			# Index of the current angle
 	resolution = 360
 	position = "crossed"
+	running = True
 
 	# Constructor for the app, sets up the PyGUI context and viewport
 	def __init__(self):
@@ -145,14 +146,23 @@ class App:
 	def run(self):
 		dpg.show_viewport()
 		dpg.set_viewport_vsync(True)
+		self.current_angle = self.omega1
+		self.angle_index = self.current_angle % (self.resolution - 1)
+		self.update_mechanism()
 		while dpg.is_dearpygui_running():
-			new_angle = self.current_angle + (self.omega1 * dpg.get_delta_time()) % 360
-			new_angle_index = math.floor(new_angle / (360 / self.resolution)) % (self.resolution - 1)
-			self.current_angle = new_angle
-			self.angle_index = new_angle_index
-			self.update_mechanism()
+			if self.running:
+				new_angle = self.current_angle + (self.omega1 * dpg.get_delta_time()) % 360
+				new_angle_index = math.floor(new_angle / (360 / self.resolution)) % (self.resolution - 1)
+				self.current_angle = new_angle
+				self.angle_index = new_angle_index
+				self.update_mechanism()
 			dpg.render_dearpygui_frame()
 		dpg.destroy_context()
+
+	# Toggles the running state of the app
+	def toggle_running(self):
+		self.running = not self.running
+		dpg.configure_item("toggle_running", label="Pause" if self.running else "Resume")
 
 	# Update the mechanism to the current angle
 	def update_mechanism(self):
@@ -316,7 +326,8 @@ class App:
 			dpg.add_text("Analysis Settings")
 			dpg.add_slider_int(label="Resolution", default_value=App.resolution, max_value=500)
 			dpg.add_radio_button(["Open", "Crossed"], label="Position", default_value=0)
-			dpg.add_button(label="Analyze")
+			dpg.add_button(label="Update and Analyze")
+			dpg.add_button(label="Pause" if self.running else "Resume", tag="toggle_running", callback=self.toggle_running)
 
 		# Save the mechanism settings window
 		self.mechanism_settings = mechanism_settings
@@ -399,3 +410,5 @@ class App:
 
 		# Save the acceleration plot window
 		self.acceleration_analysis = acceleration_analysis
+
+App().run()
