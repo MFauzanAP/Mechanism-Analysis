@@ -23,9 +23,9 @@ class App:
 	GREY = (150, 150, 150, 255)
 
 	# Sizes
-	LINK_SCALE = 50
+	LINK_SCALE = 500
 	LINK_THICKNESS = 3
-	VELOCITY_SCALE = 1
+	VELOCITY_SCALE = 10
 	VELOCITY_THICKNESS = 6
 	CIRCLE_THICKNESS = 8
 
@@ -38,10 +38,10 @@ class App:
 	acceleration_analysis = None
 
 	# Link Lengths
-	a = 1
-	b = 4.5
-	c = 2.5
-	d = 4.5
+	a = 0.1
+	b = 0.45
+	c = 0.25
+	d = 0.45
 
 	# Link Angles
 	theta1 = 0
@@ -72,7 +72,7 @@ class App:
 	accelerationBA = (0, 0)
 
 	# Knife Offset
-	knife_offset = 1
+	knife_offset = 0.1
 
 	# Analysis Settings
 	offset = (WINDOW_WIDTH * 0.3, (WINDOW_HEIGHT - TAB_HEIGHT) * 0.75)
@@ -200,8 +200,8 @@ class App:
 		dpg.configure_item("knife_link", p1=kl1, p2=kl2)
 
 		k1 = kl2
-		k2 = calculate_end_point(k1, 2*App.LINK_SCALE, self.theta3[self.angle_index])
-		k3 = calculate_end_point(k1, 0.5*App.LINK_SCALE, self.theta3[self.angle_index] - 90)
+		k2 = calculate_end_point(k1, 0.2*App.LINK_SCALE, self.theta3[self.angle_index])
+		k3 = calculate_end_point(k1, 0.05*App.LINK_SCALE, self.theta3[self.angle_index] - 90)
 		dpg.configure_item("knife", p1=k1, p2=k2, p3=k3)
 
 		# Update the velocity arrows
@@ -274,8 +274,8 @@ class App:
 					dpg.draw_line(kl1, kl2, tag="knife_link", color=App.YELLOW, thickness=App.LINK_THICKNESS)
 
 					k1 = kl2
-					k2 = calculate_end_point(k1, 2*App.LINK_SCALE, self.theta3[self.angle_index])
-					k3 = calculate_end_point(k1, 0.5*App.LINK_SCALE, self.theta3[self.angle_index] - 90)
+					k2 = calculate_end_point(k1, 0.2*App.LINK_SCALE, self.theta3[self.angle_index])
+					k3 = calculate_end_point(k1, 0.05*App.LINK_SCALE, self.theta3[self.angle_index] - 90)
 					dpg.draw_triangle(k1, k2, k3, tag="knife", color=App.BROWN, fill=App.BROWN)
 
 				# Draw the velocity arrows
@@ -314,11 +314,11 @@ class App:
 			no_move=True,
 			no_collapse=True,
 		) as mechanism_settings:
-			dpg.add_text("Link Lengths")
-			dpg.add_slider_float(label="Input Link A (m)", default_value=self.a, max_value=10)
-			dpg.add_slider_float(label="B (m)", default_value=self.b, max_value=10)
-			dpg.add_slider_float(label="C (m)", default_value=self.c, max_value=10)
-			dpg.add_slider_float(label="Ground Link D (m)", default_value=self.d, max_value=10)
+			dpg.add_text("Link Lengths (cm)")
+			dpg.add_slider_float(label="Input Link A", default_value=self.a, max_value=1)
+			dpg.add_slider_float(label="B", default_value=self.b, max_value=1)
+			dpg.add_slider_float(label="C", default_value=self.c, max_value=1)
+			dpg.add_slider_float(label="Ground Link D", default_value=self.d, max_value=1)
 			dpg.add_text("Ground Angle")
 			dpg.add_slider_float(label="degree", default_value=self.theta4, min_value=0, max_value=360)
 			dpg.add_text("Input Speed")
