@@ -312,14 +312,14 @@ class App:
 
 					vA1 = a2
 					vA2 = calculate_end_point(vA1, magnitude(vA)*App.VELOCITY_SCALE, angle(vA))
-					vB1 = b2
-					vB2 = calculate_end_point(vB1, magnitude(vB)*App.VELOCITY_SCALE, angle(vB))
-					vBA1 = c2
+					vBA1 = b2
 					vBA2 = calculate_end_point(vBA1, magnitude(vBA)*App.VELOCITY_SCALE, angle(vBA))
+					vB1 = c2
+					vB2 = calculate_end_point(vB1, magnitude(vB)*App.VELOCITY_SCALE, angle(vB))
 
 					dpg.draw_arrow(vA2, vA1, tag="vA_arrow", color=App.RED_50, thickness=App.VELOCITY_THICKNESS)
-					dpg.draw_arrow(vB2, vB1, tag="vB_arrow", color=App.BLUE_50, thickness=App.VELOCITY_THICKNESS)
-					dpg.draw_arrow(vBA2, vBA1, tag="vBA_arrow", color=App.YELLOW_50, thickness=App.VELOCITY_THICKNESS)
+					dpg.draw_arrow(vBA2, vBA1, tag="vBA_arrow", color=App.BLUE_50, thickness=App.VELOCITY_THICKNESS)
+					dpg.draw_arrow(vB2, vB1, tag="vB_arrow", color=App.YELLOW_50, thickness=App.VELOCITY_THICKNESS)
 
 				# Draw the bounding box
 				with dpg.draw_layer(tag="bounding_box"):

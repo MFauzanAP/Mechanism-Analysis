@@ -30,6 +30,7 @@ The program is still under development and will be updated with new features and
 - [ ] Ability to change the link lengths, ground angle, input speed, and mechanism position (open or crossed)
 - [ ] Path tracing of rocker linkage
 - [ ] Add slider to set input angle and automatically update mechanism
+- [ ] Show current angles, velocities, and accelerations in each of their plots 
 
 ### Extra
 - [ ] Plots for omega and alpha values
@@ -38,4 +39,5 @@ The program is still under development and will be updated with new features and
 - [ ] Arcs showing current angle of links
 - [ ] Isolate a single link and show the changes in its angle, velocity, and acceleration
 - [ ] Add plot for dimension changes
+- [ ] Add ability to move the offset position
 
