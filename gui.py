@@ -21,6 +21,7 @@ class App:
 	YELLOW = (255, 255, 0, 255)
 	YELLOW_50 = (138, 108, 14, 255)
 	GREY = (150, 150, 150, 255)
+	DARK_GREY = (100, 100, 100, 255)
 
 	# Sizes
 	LINK_SCALE = 500
@@ -28,6 +29,8 @@ class App:
 	VELOCITY_SCALE = 10
 	VELOCITY_THICKNESS = 6
 	CIRCLE_THICKNESS = 8
+	DIMENSION_OFFSET = 0.1
+	DIMENSION_THICKNESS = 4
 
 	# Windows
 	mechanism_settings = None
@@ -44,9 +47,9 @@ class App:
 	d = 0.45
 
 	# Link Angles
-	theta1 = 0
-	theta2 = 0
-	theta3 = 0
+	theta1 = []
+	theta2 = []
+	theta3 = []
 	theta4 = 0		# Ground Angle
 
 	# Link Angular Velocities
@@ -76,11 +79,11 @@ class App:
 
 	# Analysis Settings
 	offset = (WINDOW_WIDTH * 0.3, (WINDOW_HEIGHT - TAB_HEIGHT) * 0.75)
-	current_angle = 0		# Current angle of the input link
+	current_angle = 180		# Current angle of the input link
 	angle_index = 0			# Index of the current angle
 	resolution = 360
 	position = "crossed"
-	running = True
+	running = False
 
 	# Constructor for the app, sets up the PyGUI context and viewport
 	def __init__(self):
@@ -97,7 +100,6 @@ class App:
 		self.create_position_plot()
 		self.create_velocity_plot()
 		self.create_acceleration_plot()
-		self.create_mechanism_drawing()
 
 	# Uses the updated mechanism properties to update the computed values
 	def analyze_mechanism(self):
@@ -146,9 +148,8 @@ class App:
 	def run(self):
 		dpg.show_viewport()
 		dpg.set_viewport_vsync(True)
-		self.current_angle = self.omega1
 		self.angle_index = self.current_angle % (self.resolution - 1)
-		self.update_mechanism()
+		self.create_mechanism_drawing()
 		while dpg.is_dearpygui_running():
 			if self.running:
 				new_angle = self.current_angle + (self.omega1 * dpg.get_delta_time()) % 360
@@ -219,6 +220,31 @@ class App:
 		dpg.configure_item("vA_arrow", p1=vA2, p2=vA1)
 		dpg.configure_item("vB_arrow", p1=vB2, p2=vB1)
 		dpg.configure_item("vBA_arrow", p1=vBA2, p2=vBA1)
+
+		# Update the bounding box
+		x_coords = [a1[0], a2[0], b1[0], b2[0], c1[0], c2[0], d1[0], d2[0], kl1[0], kl2[0]]
+		min_x = min(x_coords)
+		max_x = max(x_coords)
+
+		y_coords = [a1[1], a2[1], b1[1], b2[1], c1[1], c2[1], d1[1], d2[1], kl1[1], kl2[1]]
+		min_y = min(y_coords)
+		max_y = max(y_coords)
+
+		dx1 = (min_x, max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
+		dx2 = (max_x, max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
+		dpg.configure_item("dim_x", p1=dx1, p2=dx2)
+
+		dy1 = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, min_y)
+		dy2 = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, max_y)
+		dpg.configure_item("dim_y", p1=dy1, p2=dy2)
+
+		dx_pos = (min_x + ((dx2[0] - dx1[0]) / 2), max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
+		dx_text = f"{round((dx2[0] - dx1[0]) / App.LINK_SCALE, 2)} m"
+		dpg.configure_item("dim_x_text", pos=dx_pos, text=dx_text)
+
+		dy_pos = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, min_y + ((dy2[1] - dy1[1]) / 2))
+		dy_text = f"{round((dy2[1] - dy1[1]) / App.LINK_SCALE, 2)} m"
+		dpg.configure_item("dim_y_text", pos=dy_pos, text=dy_text)
 
 	# Create mechanism drawing window
 	def create_mechanism_drawing(self):
@@ -295,6 +321,50 @@ class App:
 					dpg.draw_arrow(vB2, vB1, tag="vB_arrow", color=App.BLUE_50, thickness=App.VELOCITY_THICKNESS)
 					dpg.draw_arrow(vBA2, vBA1, tag="vBA_arrow", color=App.YELLOW_50, thickness=App.VELOCITY_THICKNESS)
 
+				# Draw the bounding box
+				with dpg.draw_layer(tag="bounding_box"):
+					x_coords = [a1[0], a2[0], b1[0], b2[0], c1[0], c2[0], d1[0], d2[0], kl1[0], kl2[0]]
+					min_x = min(x_coords)
+					max_x = max(x_coords)
+
+					y_coords = [a1[1], a2[1], b1[1], b2[1], c1[1], c2[1], d1[1], d2[1], kl1[1], kl2[1]]
+					min_y = min(y_coords)
+					max_y = max(y_coords)
+
+					dx1 = (min_x, max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
+					dx2 = (max_x, max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
+					dpg.draw_line(
+						dx1, dx2,
+						tag="dim_x",
+						color=App.DARK_GREY,
+						thickness=App.DIMENSION_THICKNESS
+					)
+
+					dy1 = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, min_y)
+					dy2 = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, max_y)
+					dpg.draw_line(
+						dy1, dy2,
+						tag="dim_y",
+						color=App.DARK_GREY,
+						thickness=App.DIMENSION_THICKNESS
+					)
+
+					dx_pos = (min_x + ((dx2[0] - dx1[0]) / 2), max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
+					dx_text = f"{round((dx2[0] - dx1[0]) / App.LINK_SCALE, 2)} m"
+					dpg.draw_text(
+						dx_pos, dx_text,
+						tag="dim_x_text",
+						size=14,
+					)
+					
+					dy_pos = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, min_y + ((dy2[1] - dy1[1]) / 2))
+					dy_text = f"{round((dy2[1] - dy1[1]) / App.LINK_SCALE, 2)} m"
+					dpg.draw_text(
+						dy_pos, dy_text,
+						tag="dim_y_text",
+						size=14,
+					)
+
 		# Save the mechanism drawing window
 		self.mechanism_drawing = mechanism_drawing
 		self.mechanism_canvas = mechanism_canvas
@@ -314,7 +384,7 @@ class App:
 			no_move=True,
 			no_collapse=True,
 		) as mechanism_settings:
-			dpg.add_text("Link Lengths (cm)")
+			dpg.add_text("Link Lengths (m)")
 			dpg.add_slider_float(label="Input Link A", default_value=self.a, max_value=1)
 			dpg.add_slider_float(label="B", default_value=self.b, max_value=1)
 			dpg.add_slider_float(label="C", default_value=self.c, max_value=1)
@@ -324,6 +394,7 @@ class App:
 			dpg.add_text("Input Speed")
 			dpg.add_slider_float(label="rpm", default_value=self.omega1, min_value=5, max_value=10)
 			dpg.add_text("Analysis Settings")
+			dpg.add_slider_float(label="Input Angle", default_value=self.current_angle, min_value=0, max_value=360)
 			dpg.add_slider_int(label="Resolution", default_value=App.resolution, max_value=500)
 			dpg.add_radio_button(["Open", "Crossed"], label="Position", default_value=0)
 			dpg.add_button(label="Update and Analyze")

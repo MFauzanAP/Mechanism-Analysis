@@ -29,6 +29,7 @@ The program is still under development and will be updated with new features and
 - [ ] Mechanism factor of safety and performance analysis
 - [ ] Ability to change the link lengths, ground angle, input speed, and mechanism position (open or crossed)
 - [ ] Path tracing of rocker linkage
+- [ ] Add slider to set input angle and automatically update mechanism
 
 ### Extra
 - [ ] Plots for omega and alpha values
@@ -36,5 +37,5 @@ The program is still under development and will be updated with new features and
 - [ ] Arrows showing acceleration vectors
 - [ ] Arcs showing current angle of links
 - [ ] Isolate a single link and show the changes in its angle, velocity, and acceleration
-
+- [ ] Add plot for dimension changes
 
