@@ -34,7 +34,7 @@ The program is still under development and will be updated with new features and
 - [ ] Toggle between velocity, acceleration, and force arrows
 
 ### Extra
-- [ ] Refactor program to calculate joint positions inside lib.py, then use these to calculate min and max bounding boxes and plots for dimension changes
+- [x] Refactor program to calculate joint positions inside lib.py, then use these to calculate min and max bounding boxes and plots for dimension changes
 - [ ] Slow down simulation and jump to specific time or angle
 - [x] Plots for omega and alpha values
 - [x] Marker showing current input angle in plots
@@ -42,4 +42,4 @@ The program is still under development and will be updated with new features and
 - [ ] Isolate a single link and show the changes in its angle, velocity, and acceleration
 - [ ] Add ability to move the offset position
 - [ ] Plot colors should correspond to link colors
-
+- [ ] Add vibration analysis, show change in center of mass. 

@@ -21,7 +21,7 @@ class App:
 	YELLOW = (255, 255, 0, 255)
 	YELLOW_50 = (138, 108, 14, 255)
 	GREY = (150, 150, 150, 255)
-	DARK_GREY = (100, 100, 100, 255)
+	DARK_GREY = (50, 50, 50, 255)
 
 	# Sizes
 	LINK_SCALE = 500
@@ -29,8 +29,7 @@ class App:
 	VELOCITY_SCALE = 80
 	VELOCITY_THICKNESS = 6
 	CIRCLE_THICKNESS = 8
-	DIMENSION_OFFSET = 0.1
-	DIMENSION_THICKNESS = 4
+	DIMENSION_THICKNESS = 2
 
 	# Link Lengths (m)
 	a = 0.2
@@ -62,6 +61,7 @@ class App:
 		
 		# Create the windows
 		self.create_settings()
+		self.create_mechanism_drawing()
 		self.create_position_plot()
 		self.create_velocity_plot()
 		self.create_acceleration_plot()
@@ -147,7 +147,8 @@ class App:
 		dpg.show_viewport()
 		dpg.set_viewport_vsync(True)
 		self._angle_index = self.current_angle % (self.resolution - 1)
-		self.create_mechanism_drawing()
+		self.update_mechanism()
+		self.update_plots()
 		while dpg.is_dearpygui_running():
 			if self.running:
 				new_angle = (self.current_angle + (self.omega1 * 6 * dpg.get_delta_time())) % 360
@@ -241,19 +242,19 @@ class App:
 		min_y = min(y_coords)
 		max_y = max(y_coords)
 
-		dx1 = (min_x, max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
-		dx2 = (max_x, max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
+		dx1 = (min_x, self._all_max_y)
+		dx2 = (max_x, self._all_max_y)
 		dpg.configure_item("dim_x", p1=dx1, p2=dx2)
 
-		dy1 = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, min_y)
-		dy2 = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, max_y)
+		dy1 = (self._all_max_x, min_y)
+		dy2 = (self._all_max_x, max_y)
 		dpg.configure_item("dim_y", p1=dy1, p2=dy2)
 
-		dx_pos = (min_x + ((dx2[0] - dx1[0]) / 2), max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
+		dx_pos = (min_x + ((dx2[0] - dx1[0]) / 2), self._all_max_y)
 		dx_text = f"{round((dx2[0] - dx1[0]) / App.LINK_SCALE, 2)} m"
 		dpg.configure_item("dim_x_text", pos=dx_pos, text=dx_text)
 
-		dy_pos = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, min_y + ((dy2[1] - dy1[1]) / 2))
+		dy_pos = (self._all_max_x, min_y + ((dy2[1] - dy1[1]) / 2))
 		dy_text = f"{round((dy2[1] - dy1[1]) / App.LINK_SCALE, 2)} m"
 		dpg.configure_item("dim_y_text", pos=dy_pos, text=dy_text)
 
@@ -391,6 +392,14 @@ class App:
 
 				# Draw the bounding box
 				with dpg.draw_layer(tag="bounding_box"):
+					all_x_coords = [pos[0] for joints in [self._a1, self._a2, self._b1, self._b2, self._c1, self._c2, self._d1, self._d2, self._kl1, self._kl2] for pos in joints] # Flatten the list
+					self._all_min_x = min(all_x_coords)
+					self._all_max_x = max(all_x_coords)
+
+					all_y_coords = [pos[1] for joints in [self._a1, self._a2, self._b1, self._b2, self._c1, self._c2, self._d1, self._d2, self._kl1, self._kl2] for pos in joints] # Flatten the list
+					self._all_min_y = min(all_y_coords)
+					self._all_max_y = max(all_y_coords)
+
 					x_coords = [a1[0], a2[0], b1[0], b2[0], c1[0], c2[0], d1[0], d2[0], kl1[0], kl2[0]]
 					min_x = min(x_coords)
 					max_x = max(x_coords)
@@ -399,39 +408,23 @@ class App:
 					min_y = min(y_coords)
 					max_y = max(y_coords)
 
-					dx1 = (min_x, max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
-					dx2 = (max_x, max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
-					dpg.draw_line(
-						dx1, dx2,
-						tag="dim_x",
-						color=App.DARK_GREY,
-						thickness=App.DIMENSION_THICKNESS
-					)
+					dpg.draw_rectangle((self._all_min_x, self._all_min_y), (self._all_max_x, self._all_max_y), color=App.DARK_GREY, thickness=App.DIMENSION_THICKNESS)
 
-					dy1 = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, min_y)
-					dy2 = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, max_y)
-					dpg.draw_line(
-						dy1, dy2,
-						tag="dim_y",
-						color=App.DARK_GREY,
-						thickness=App.DIMENSION_THICKNESS
-					)
+					dx1 = (min_x, self._all_max_y)
+					dx2 = (max_x, self._all_max_y)
+					dpg.draw_line(dx1, dx2, tag="dim_x", color=App.DARK_GREY, thickness=App.DIMENSION_THICKNESS * 4)
 
-					dx_pos = (min_x + ((dx2[0] - dx1[0]) / 2), max_y + App.DIMENSION_OFFSET*App.LINK_SCALE)
+					dy1 = (self._all_max_x, min_y)
+					dy2 = (self._all_max_x, max_y)
+					dpg.draw_line(dy1, dy2, tag="dim_y", color=App.DARK_GREY, thickness=App.DIMENSION_THICKNESS * 4)
+
+					dx_pos = (min_x + ((dx2[0] - dx1[0]) / 2), self._all_max_y)
 					dx_text = f"{round((dx2[0] - dx1[0]) / App.LINK_SCALE, 2)} m"
-					dpg.draw_text(
-						dx_pos, dx_text,
-						tag="dim_x_text",
-						size=14,
-					)
+					dpg.draw_text(dx_pos, dx_text, tag="dim_x_text", size=14)
 					
-					dy_pos = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, min_y + ((dy2[1] - dy1[1]) / 2))
+					dy_pos = (self._all_max_x, min_y + ((dy2[1] - dy1[1]) / 2))
 					dy_text = f"{round((dy2[1] - dy1[1]) / App.LINK_SCALE, 2)} m"
-					dpg.draw_text(
-						dy_pos, dy_text,
-						tag="dim_y_text",
-						size=14,
-					)
+					dpg.draw_text(dy_pos, dy_text, tag="dim_y_text", size=14)
 
 		# Save the mechanism drawing window
 		self._mechanism_drawing = mechanism_drawing
@@ -460,7 +453,7 @@ class App:
 			dpg.add_slider_float(label="Ground Link D", default_value=self.d, max_value=1)
 			dpg.add_text("Kinematic Input")
 			dpg.add_slider_float(label="Ground Angle (deg)", default_value=self.theta4, min_value=0, max_value=360)
-			dpg.add_slider_float(label="Input Speed (rpm)", default_value=self.omega1, min_value=5, max_value=30)
+			dpg.add_slider_float(label="Input Speed (rpm)", default_value=self.omega1, min_value=-15, max_value=15)
 			dpg.add_slider_float(label="Motor Acc. (deg/s^2)", default_value=self.alpha1, min_value=0, max_value=5)
 			dpg.add_text("Analysis Settings")
 			dpg.add_slider_float(label="Input Angle", default_value=self.current_angle, min_value=0, max_value=360)
@@ -648,6 +641,10 @@ class App:
 	_velocity_scale = VELOCITY_SCALE
 	_offset = (WINDOW_WIDTH * 0.25, WINDOW_HEIGHT * 0.55)
 	_angle_index = 0
+	_all_min_x = 0
+	_all_max_x = 0
+	_all_min_y = 0
+	_all_max_y = 0
 
 	# Analysis Data
 	_a1 = []
