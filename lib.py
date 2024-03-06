@@ -96,8 +96,10 @@ def calculate_acceleration(a, b, c, theta1, omega1, alpha1, theta2, theta3, omeg
 # Calculate and aggregate position, velocity, and acceleration analysis results for the given input angle
 def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, theta1, theta4, omega1, alpha1):
 
-	# Convert to radians
+	# Convert to appropriate units
 	theta1 = math.radians(theta1)
+	omega1 = omega1 * 0.10472
+	alpha1 = math.radians(alpha1)
 
 	# Solve for position
 	(
@@ -184,7 +186,7 @@ def analyze_mechanism(a, b, c, d, knife_offset, theta4, omega1, alpha1, offset=0
 	# Output arrays
 	output = []
 	NUM_RESULTS = 23
-	NUM_SCALAR_RESULTS = 6
+	NUM_SCALAR_RESULTS = 7
 
 	# For each data returned from the analysis
 	for i in range(NUM_RESULTS):

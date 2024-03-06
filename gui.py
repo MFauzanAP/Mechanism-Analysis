@@ -33,10 +33,10 @@ class App:
 	DIMENSION_THICKNESS = 4
 
 	# Link Lengths (m)
-	a = 0.15
-	b = 0.45
-	c = 0.25
-	d = 0.45
+	a = 0.2
+	b = 0.6
+	c = 0.5
+	d = 0.5
 	knife_offset = 0.1
 
 	# Kinematic Input
@@ -100,7 +100,7 @@ class App:
 			d=self.d,
 			knife_offset=self.knife_offset,
 			theta4=self.theta4,
-			omega1=self.omega1 * 6,
+			omega1=self.omega1,
 			alpha1=self.alpha1,
 			offset=self._offset,
 			link_scale=App.LINK_SCALE,
