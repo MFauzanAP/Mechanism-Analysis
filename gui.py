@@ -7,8 +7,8 @@ class App:
 
 	# Constants
 	WINDOW_WIDTH = 1400		# Width of the window
-	WINDOW_HEIGHT = 800		# Height of the window
-	TAB_WIDTH = 400			# Width of the plot tabs at the bottom of the window
+	WINDOW_HEIGHT = 700		# Height of the window
+	TAB_WIDTH = 450			# Width of the plot tabs at the bottom of the window
 	TAB_HEIGHT = 400		# Height of the settings and plot tabs at the bottom of the window
 
 	# Colors
@@ -57,7 +57,7 @@ class App:
 
 		# Setup the app
 		dpg.create_context()
-		dpg.create_viewport(title="Mechanism Analysis and Simulation", width=App.WINDOW_WIDTH, height=App.WINDOW_HEIGHT)
+		dpg.create_viewport(title="Mechanism Analysis and Simulation", width=App.WINDOW_WIDTH, height=App.WINDOW_HEIGHT, )
 		dpg.setup_dearpygui()
 		
 		# Create the windows
@@ -252,14 +252,14 @@ class App:
 			tag="mechanism_drawing",
 			label="Mechanism Drawing",
 			width=App.WINDOW_WIDTH,
-			height=App.WINDOW_HEIGHT - App.TAB_HEIGHT,
+			height=App.WINDOW_HEIGHT,
 			pos=(App.TAB_WIDTH, 0),
 			no_resize=True,
 			no_close=True,
 			no_move=True,
 			no_collapse=True,
 		) as mechanism_drawing:
-			with dpg.drawlist(width=App.WINDOW_WIDTH, height=App.WINDOW_HEIGHT - App.TAB_HEIGHT) as mechanism_canvas:
+			with dpg.drawlist(width=App.WINDOW_WIDTH, height=App.WINDOW_HEIGHT) as mechanism_canvas:
 
 				# Get the current link positions
 				a1 = self._a1[self._angle_index]
@@ -377,15 +377,16 @@ class App:
 	# Create settings window
 	def create_settings(self):
 		with dpg.window(
-			label="Mechanism Settings",
+			label="Inspector",
+			tag="inspector",
 			width=App.TAB_WIDTH,
-			height=App.WINDOW_HEIGHT - App.TAB_HEIGHT,
+			height=App.WINDOW_HEIGHT,
 			pos=(0, 0),
 			no_resize=True,
 			no_close=True,
 			no_move=True,
 			no_collapse=True,
-		) as mechanism_settings:
+		):
 			dpg.add_text("Link Lengths (m)")
 			dpg.add_slider_float(label="Input Link A", default_value=self.a, max_value=1)
 			dpg.add_slider_float(label="B", default_value=self.b, max_value=1)
@@ -402,21 +403,10 @@ class App:
 			dpg.add_button(label="Update and Analyze")
 			dpg.add_button(label="Pause" if self.running else "Resume", tag="toggle_running", callback=self.toggle_running)
 
-		# Save the mechanism settings window
-		self._mechanism_settings = mechanism_settings
-
 	# Create position plot window
 	def create_position_plot(self):
-		with dpg.window(
-			label="Position Analysis",
-			width=App.TAB_WIDTH,
-			height=App.TAB_HEIGHT,
-			pos=(0, App.WINDOW_HEIGHT - App.TAB_HEIGHT),
-			no_resize=True,
-			no_close=True,
-			no_move=True,
-			no_collapse=True,
-		) as position_analysis:
+		dpg.add_collapsing_header(label="Position Analysis", tag="position_analysis", parent="inspector", default_open=True)
+		with dpg.group(parent="position_analysis"):
 			with dpg.plot():
 				dpg.add_plot_legend()
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
@@ -425,102 +415,80 @@ class App:
 				dpg.add_line_series(self._theta1, self._theta2, label="Theta 2", parent="position_y_axis")
 				dpg.add_line_series(self._theta1, self._theta3, label="Theta 3", parent="position_y_axis")
 
-		# Save the position plot window
-		self._position_analysis = position_analysis
-
 	# Create velocity plot window
 	def create_velocity_plot(self):
-		with dpg.window(
-			label="Velocity Analysis",
-			width=App.TAB_WIDTH,
-			height=App.TAB_HEIGHT,
-			pos=(App.TAB_WIDTH, App.WINDOW_HEIGHT - App.TAB_HEIGHT),
-			no_resize=True,
-			no_close=True,
-			no_move=True,
-			no_collapse=True,
-		) as velocity_analysis:
+		dpg.add_collapsing_header(label="Velocity Analysis", tag="velocity_analysis", parent="inspector", default_open=True)
+		with dpg.group(parent="velocity_analysis"):
 			vA = [ magnitude(v) for v in self._velocityA ]
 			vB = [ magnitude(v) for v in self._velocityB ]
 			vBA = [ magnitude(v) for v in self._velocityBA ]
 
-			signed_vA = [ rotate(self._velocityA[i], self._theta1[i])[1] for i in range(len(self._velocityA)) ]
-			signed_vB = [ rotate(self._velocityB[i], self._theta3[i])[1] for i in range(len(self._velocityB)) ]
-			signed_vBA = [ rotate(self._velocityBA[i], self._theta2[i])[1] for i in range(len(self._velocityBA)) ]
+			tang_vA = [ rotate(self._velocityA[i], self._theta1[i])[1] for i in range(len(self._velocityA)) ]
+			tang_vB = [ rotate(self._velocityB[i], self._theta3[i])[1] for i in range(len(self._velocityB)) ]
+			tang_vBA = [ rotate(self._velocityBA[i], self._theta2[i])[1] for i in range(len(self._velocityBA)) ]
 
+			dpg.add_text("Magnitudal Velocity (m/s)")
 			with dpg.plot():
 				dpg.add_plot_legend()
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
-				dpg.add_plot_axis(dpg.mvYAxis, label="Output Linear Velocity (m/s)", tag="linear_velocity_y_axis")
-				dpg.add_line_series(self._theta1, vA, label="Velocity A", parent="linear_velocity_y_axis")
-				dpg.add_line_series(self._theta1, vB, label="Velocity B", parent="linear_velocity_y_axis")
-				dpg.add_line_series(self._theta1, vBA, label="Velocity BA", parent="linear_velocity_y_axis")
+				dpg.add_plot_axis(dpg.mvYAxis, label="Output Magnitudal Velocity (m/s)", tag="mag_velocity_y_axis")
+				dpg.add_line_series(self._theta1, vA, label="Velocity 1", parent="mag_velocity_y_axis")
+				dpg.add_line_series(self._theta1, vBA, label="Velocity 2", parent="mag_velocity_y_axis")
+				dpg.add_line_series(self._theta1, vB, label="Velocity 3", parent="mag_velocity_y_axis")
 
+			dpg.add_text("Velocity Components (m/s)")
 			with dpg.plot():
 				dpg.add_plot_legend()
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
-				dpg.add_plot_axis(dpg.mvYAxis, label="Output Signed Velocity (m/s)", tag="signed_velocity_y_axis")
-				dpg.add_line_series(self._theta1, signed_vA, label="Velocity A", parent="signed_velocity_y_axis")
-				dpg.add_line_series(self._theta1, signed_vB, label="Velocity B", parent="signed_velocity_y_axis")
-				dpg.add_line_series(self._theta1, signed_vBA, label="Velocity BA", parent="signed_velocity_y_axis")
-
-		# Save the velocity plot window
-		self._velocity_analysis = velocity_analysis
+				dpg.add_plot_axis(dpg.mvYAxis, label="Output Velocity Components (m/s)", tag="comp_velocity_y_axis")
+				dpg.add_line_series(self._theta1, tang_vA, label="Tangential 1", parent="comp_velocity_y_axis")
+				dpg.add_line_series(self._theta1, tang_vBA, label="Tangential 2", parent="comp_velocity_y_axis")
+				dpg.add_line_series(self._theta1, tang_vB, label="Tangential 3", parent="comp_velocity_y_axis")
 
 	# Create acceleration plot window
 	def create_acceleration_plot(self):
-		with dpg.window(
-			label="Acceleration Analysis",
-			width=App.TAB_WIDTH,
-			height=App.TAB_HEIGHT,
-			pos=(2*App.TAB_WIDTH, App.WINDOW_HEIGHT - App.TAB_HEIGHT),
-			no_resize=True,
-			no_close=True,
-			no_move=True,
-			no_collapse=True,
-		) as acceleration_analysis:
+		dpg.add_collapsing_header(label="Acceleration Analysis", tag="acceleration_analysis", parent="inspector", default_open=True)
+		with dpg.group(parent="acceleration_analysis"):
 			aA = [ magnitude(a) for a in self._accelerationA ]
 			aB = [ magnitude(a) for a in self._accelerationB ]
 			aBA = [ magnitude(a) for a in self._accelerationBA ]
 
-			signed_aA = [ rotate(self._accelerationA[i], self._theta1[i])[1] for i in range(len(self._accelerationA)) ]
-			signed_aB = [ rotate(self._accelerationB[i], self._theta3[i])[1] for i in range(len(self._accelerationB)) ]
-			signed_aBA = [ rotate(self._accelerationBA[i], self._theta2[i])[1] for i in range(len(self._accelerationBA)) ]
+			tang_aA = [ rotate(self._accelerationA[i], self._theta1[i])[1] for i in range(len(self._accelerationA)) ]
+			tang_aB = [ rotate(self._accelerationB[i], self._theta3[i])[1] for i in range(len(self._accelerationB)) ]
+			tang_aBA = [ rotate(self._accelerationBA[i], self._theta2[i])[1] for i in range(len(self._accelerationBA)) ]
 
+			radial_aA = [ rotate(self._accelerationA[i], self._theta1[i])[0] for i in range(len(self._accelerationA)) ]
+			radial_aB = [ rotate(self._accelerationB[i], self._theta3[i])[0] for i in range(len(self._accelerationB)) ]
+			radial_aBA = [ rotate(self._accelerationBA[i], self._theta2[i])[0] for i in range(len(self._accelerationBA)) ]
+
+			dpg.add_text("Magnitudal Acceleration (m/s^2)")
 			with dpg.plot():
 				dpg.add_plot_legend()
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
-				dpg.add_plot_axis(dpg.mvYAxis, label="Output Linear Acceleration (m/s^2)", tag="linear_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, aA, label="Acceleration A", parent="linear_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, aB, label="Acceleration B", parent="linear_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, aBA, label="Acceleration BA", parent="linear_acceleration_y_axis")
+				dpg.add_plot_axis(dpg.mvYAxis, label="Output Magnitudal Acceleration (m/s^2)", tag="mag_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aA, label="Acceleration 1", parent="mag_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aBA, label="Acceleration 2", parent="mag_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aB, label="Acceleration 3", parent="mag_acceleration_y_axis")
 
+			dpg.add_text("Acceleration Components (m/s^2)")
 			with dpg.plot():
 				dpg.add_plot_legend()
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
-				dpg.add_plot_axis(dpg.mvYAxis, label="Output Signed Acceleration (m/s^2)", tag="signed_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, signed_aA, label="Acceleration A", parent="signed_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, signed_aB, label="Acceleration B", parent="signed_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, signed_aBA, label="Acceleration BA", parent="signed_acceleration_y_axis")
-
-		# Save the acceleration plot window
-		self._acceleration_analysis = acceleration_analysis
-
-	# Windows
-	_mechanism_settings = None
-	_mechanism_drawing = None
-	_mechanism_canvas = None
-	_position_analysis = None
-	_velocity_analysis = None
-	_acceleration_analysis = None
+				dpg.add_plot_axis(dpg.mvYAxis, label="Output Acceleration Components (m/s^2)", tag="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, tang_aA, label="Tangential 1", parent="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, radial_aA, label="Radial 1", parent="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, tang_aBA, label="Tangential 2", parent="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, radial_aBA, label="Radial 2", parent="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, tang_aB, label="Tangential 3", parent="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, radial_aB, label="Radial 3", parent="comp_acceleration_y_axis")
 
 	# Analysis Settings
 	_velocity_scale = VELOCITY_SCALE
-	_offset = (WINDOW_WIDTH * 0.3, (WINDOW_HEIGHT - TAB_HEIGHT) * 0.75)
+	_offset = (WINDOW_WIDTH * 0.3, WINDOW_HEIGHT * 0.6)
 	_angle_index = 0
 
 	# Analysis Data
