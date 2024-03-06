@@ -65,6 +65,7 @@ class App:
 		self.create_position_plot()
 		self.create_velocity_plot()
 		self.create_acceleration_plot()
+		self.create_performance_plot()
 
 	# Uses the updated mechanism properties to update the computed values
 	def analyze_mechanism(self):
@@ -77,6 +78,9 @@ class App:
 			omega3,
 			alpha2,
 			alpha3,
+			transmission_angle,
+			velocity_ratio,
+			mechanical_advantage,
 			a1,
 			a2,
 			b1,
@@ -141,6 +145,9 @@ class App:
 		self._accelerationA = accelerationA			# m/s^2
 		self._accelerationB = accelerationB			# m/s^2
 		self._accelerationBA = accelerationBA		# m/s^2
+		self._transmission_angle = transmission_angle
+		self._velocity_ratio = velocity_ratio
+		self._mechanical_advantage = mechanical_advantage
 
 	# Runs the app and starts the render loop
 	def run(self):
@@ -304,6 +311,14 @@ class App:
 		dpg.configure_item("tang_aB_value", default_value=f"Tangential Acceleration 3: {tang_aB} m/s^2")
 		dpg.configure_item("radial_aB_value", default_value=f"Radial Acceleration 3: {radial_aB} m/s^2")
 
+		# Update performance values
+		transmission_angle = round(self._transmission_angle[self._angle_index], 2)
+		velocity_ratio = round(self._velocity_ratio[self._angle_index], 2)
+		mechanical_advantage = round(self._mechanical_advantage[self._angle_index], 2)
+		dpg.configure_item("transmission_angle_value", default_value=f"Transmission Angle: {transmission_angle} deg")
+		dpg.configure_item("velocity_ratio_value", default_value=f"Velocity Ratio: {velocity_ratio}")
+		dpg.configure_item("mechanical_advantage_value", default_value=f"Mechanical Advantage: {mechanical_advantage}")
+
 		# Update the current angle indicators
 		dpg.configure_item("pos_indicator", default_value=self.current_angle)
 		dpg.configure_item("angular_velocity_indicator", default_value=self.current_angle)
@@ -312,6 +327,9 @@ class App:
 		dpg.configure_item("angular_acceleration_indicator", default_value=self.current_angle)
 		dpg.configure_item("mag_acceleration_indicator", default_value=self.current_angle)
 		dpg.configure_item("comp_acceleration_indicator", default_value=self.current_angle)
+		dpg.configure_item("transmission_indicator", default_value=self.current_angle)
+		dpg.configure_item("velocity_ratio_indicator", default_value=self.current_angle)
+		dpg.configure_item("mechanical_advantage_indicator", default_value=self.current_angle)
 
 	# Create mechanism drawing window
 	def create_mechanism_drawing(self):
@@ -637,6 +655,47 @@ class App:
 				dpg.add_line_series(self._theta1, radial_aB_list, label="Radial 3", parent="comp_acceleration_y_axis")
 				dpg.add_drag_line(label="Current Angle", tag="comp_acceleration_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
+	# Create performance plots
+	def create_performance_plot(self):
+		dpg.add_collapsing_header(label="Performance Analysis", tag="performance_analysis", parent="inspector")
+		with dpg.group(parent="performance_analysis"):
+			transmission_angle = round(self._transmission_angle[self._angle_index], 2)
+			velocity_ratio = round(self._velocity_ratio[self._angle_index], 2)
+			mechanical_advantage = round(self._mechanical_advantage[self._angle_index], 2)
+
+			dpg.add_text(f"Transmission Angle: {transmission_angle} deg", tag="transmission_angle_value")
+			dpg.add_text(f"Range of Transmission Angle: {round(min(self._transmission_angle), 2)} to {round(max(self._transmission_angle), 2)} deg")
+
+			with dpg.plot():
+				dpg.add_plot_legend()
+				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+				dpg.set_axis_limits(dpg.last_item(), 0, 360)
+				dpg.add_plot_axis(dpg.mvYAxis, label="Transmission Angle (degree)", tag="transmission_y_axis")
+				dpg.add_line_series(self._theta1, self._transmission_angle, label="Transmission Angle", parent="transmission_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="transmission_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+			dpg.add_text(f"Velocity Ratio: {velocity_ratio}", tag="velocity_ratio_value")
+			dpg.add_text(f"Range of Velocity Ratio: {round(min(self._velocity_ratio), 2)} to {round(max(self._velocity_ratio), 2)}")
+
+			with dpg.plot():
+				dpg.add_plot_legend()
+				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+				dpg.set_axis_limits(dpg.last_item(), 0, 360)
+				dpg.add_plot_axis(dpg.mvYAxis, label="Output Ratio", tag="velocity_ratio_y_axis")
+				dpg.add_line_series(self._theta1, self._velocity_ratio, label="Velocity Ratio", parent="velocity_ratio_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="velocity_ratio_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+			dpg.add_text(f"Mechanical Advantage: {mechanical_advantage}", tag="mechanical_advantage_value")
+			dpg.add_text(f"Range of Mechanical Advantage: {round(min(self._mechanical_advantage), 2)} to {round(max(self._mechanical_advantage), 2)}")
+
+			with dpg.plot():
+				dpg.add_plot_legend()
+				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+				dpg.set_axis_limits(dpg.last_item(), 0, 360)
+				dpg.add_plot_axis(dpg.mvYAxis, label="Output Ratio", tag="mechanical_advantange_y_axis")
+				dpg.add_line_series(self._theta1, self._mechanical_advantage, label="Mechanical Advantage", parent="mechanical_advantange_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="mechanical_advantage_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
 	# Analysis Settings
 	_velocity_scale = VELOCITY_SCALE
 	_offset = (WINDOW_WIDTH * 0.25, WINDOW_HEIGHT * 0.55)
@@ -672,5 +731,8 @@ class App:
 	_accelerationA = (0, 0)
 	_accelerationB = (0, 0)
 	_accelerationBA = (0, 0)
+	_transmission_angle = []
+	_velocity_ratio = []
+	_mechanical_advantage = []
 
 App().run()

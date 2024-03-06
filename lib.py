@@ -93,6 +93,13 @@ def calculate_acceleration(a, b, c, theta1, omega1, alpha1, theta2, theta3, omeg
 	# Return the calculated accelerations
 	return (alpha2, alpha3, accelerationA, accelerationB, accelerationBA)
 
+# Calculate transmission angle and mechanical advantage
+def calculate_performance(a, b, c, d, theta1, omega1, omega3):
+	transmission_angle = math.acos((a**2 + d**2 - b**2 - c**2 - 2*a*d*math.cos(theta1)) / (-2*b*c))
+	velocity_ratio = omega3 / omega1
+	mechanical_advantage = (omega1 * a) / (omega3 * c)
+	return (transmission_angle, velocity_ratio, mechanical_advantage)
+
 # Calculate and aggregate position, velocity, and acceleration analysis results for the given input angle
 def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, theta1, theta4, omega1, alpha1):
 
@@ -153,6 +160,17 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 		omega3=omega3,
 	)
 
+	# Solve for performance
+	(transmission_angle, velocity_ratio, mechanical_advantage) = calculate_performance(
+		a=a,
+		b=b,
+		c=c,
+		d=d,
+		theta1=theta1,
+		omega1=omega1,
+		omega3=omega3,
+	)
+
 	# Return the calculated angles
 	return (
 		theta1,
@@ -162,6 +180,9 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 		omega3,
 		alpha2,
 		alpha3,
+		transmission_angle,
+		velocity_ratio,
+		mechanical_advantage,
 		a1,
 		a2,
 		b1,
@@ -178,6 +199,7 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 		accelerationA,
 		accelerationB,
 		accelerationBA,
+		
 	)
 
 # Loops through all possible angles, calculates the results, and aggregates them into arrays
@@ -185,8 +207,8 @@ def analyze_mechanism(a, b, c, d, knife_offset, theta4, omega1, alpha1, offset=0
 
 	# Output arrays
 	output = []
-	NUM_RESULTS = 23
-	NUM_SCALAR_RESULTS = 7
+	NUM_RESULTS = 26
+	NUM_SCALAR_RESULTS = 8
 
 	# For each data returned from the analysis
 	for i in range(NUM_RESULTS):

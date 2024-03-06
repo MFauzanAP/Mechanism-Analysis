@@ -26,7 +26,7 @@ The program is still under development and will be updated with new features and
 
 ### Required
 - [ ] Mechanism dynamic force analysis for all links and at knife-edge
-- [ ] Mechanism transmission angle and mechanical advantage analysis
+- [x] Mechanism transmission angle and mechanical advantage analysis
 - [ ] Mechanism factor of safety and dynamic analysis (forces and torque)
 - [ ] Ability to change the link lengths, ground angle, input angle, speed, and mechanism position (open or crossed)
 - [ ] Path tracing of rocker linkage
