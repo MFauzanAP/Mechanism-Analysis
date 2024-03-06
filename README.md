@@ -33,11 +33,12 @@ The program is still under development and will be updated with new features and
 - [ ] Show current angles, velocities, and accelerations in each of their plots 
 
 ### Extra
+- [ ] Refactor program to calculate joint positions inside lib.py, then use these to calculate min and max bounding boxes and plots for dimension changes
+- [ ] Slow down simulation and jump to specific time or angle
 - [ ] Plots for omega and alpha values
 - [ ] Marker showing current input angle in plots
 - [ ] Arrows showing acceleration vectors
 - [ ] Arcs showing current angle of links
 - [ ] Isolate a single link and show the changes in its angle, velocity, and acceleration
-- [ ] Add plot for dimension changes
 - [ ] Add ability to move the offset position
 

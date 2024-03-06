@@ -83,6 +83,16 @@ class App:
 			omega3,
 			alpha2,
 			alpha3,
+			a1,
+			a2,
+			b1,
+			b2,
+			c1,
+			c2,
+			d1,
+			d2,
+			kl1,
+			kl2,
 			velocityA,
 			velocityB,
 			velocityBA,
@@ -94,8 +104,12 @@ class App:
 			b=self.b,
 			c=self.c,
 			d=self.d,
+			knife_offset=self.knife_offset,
+			theta4=self.theta4,
 			omega1=self.omega1,
 			alpha1=self.alpha1,
+			offset=self._offset,
+			link_scale=App.LINK_SCALE,
 			resolution=self.resolution,
 			position=self.position,
 		)
@@ -108,6 +122,16 @@ class App:
 		self._omega3 = omega3
 		self._alpha2 = alpha2
 		self._alpha3 = alpha3
+		self._a1 = a1
+		self._a2 = a2
+		self._b1 = b1
+		self._b2 = b2
+		self._c1 = c1
+		self._c2 = c2
+		self._d1 = d1
+		self._d2 = d2
+		self._kl1 = kl1
+		self._kl2 = kl2
 		self._velocityA = velocityA
 		self._velocityB = velocityB
 		self._velocityBA = velocityBA
@@ -138,37 +162,39 @@ class App:
 
 	# Update the mechanism to the current angle
 	def update_mechanism(self):
+		# Get the current link positions
+		a1 = self._a1[self._angle_index]
+		a2 = self._a2[self._angle_index]
+		b1 = self._b1[self._angle_index]
+		b2 = self._b2[self._angle_index]
+		c1 = self._c1[self._angle_index]
+		c2 = self._c2[self._angle_index]
+		d1 = self._d1[self._angle_index]
+		d2 = self._d2[self._angle_index]
+		kl1 = self._kl1[self._angle_index]
+		kl2 = self._kl2[self._angle_index]
+
 		# Update ground link (D)
-		d1 = self._offset
-		d2 = calculate_end_point(d1, self.d*App.LINK_SCALE, self.theta4)
 		dpg.configure_item("link_d", p1=d1, p2=d2)
 		dpg.configure_item("joint_d1", center=d1)
 		dpg.configure_item("joint_d2", center=d2)
 
 		# Update input link (A)
-		a1 = self._offset
-		a2 = calculate_end_point(a1, self.a*App.LINK_SCALE, self._theta1[self._angle_index])
 		dpg.configure_item("link_a", p1=a1, p2=a2)
 		dpg.configure_item("joint_a1", center=a1)
 		dpg.configure_item("joint_a2", center=a2)
 
 		# Update link B
-		b1 = a2
-		b2 = calculate_end_point(b1, self.b*App.LINK_SCALE, self._theta2[self._angle_index])
 		dpg.configure_item("link_b", p1=b1, p2=b2)
 		dpg.configure_item("joint_b1", center=b1)
 		dpg.configure_item("joint_b2", center=b2)
 
 		# Update link C
-		c1 = d2
-		c2 = b2
 		dpg.configure_item("link_c", p1=c1, p2=c2)
 		dpg.configure_item("joint_c1", center=c1)
 		dpg.configure_item("joint_c2", center=c2)
 
 		# Update the knife
-		kl1 = c2
-		kl2 = calculate_end_point(kl1, self.knife_offset*App.LINK_SCALE, self._theta3[self._angle_index])
 		dpg.configure_item("knife_link", p1=kl1, p2=kl2)
 
 		k1 = kl2
@@ -232,45 +258,47 @@ class App:
 		) as mechanism_drawing:
 			with dpg.drawlist(width=App.WINDOW_WIDTH, height=App.WINDOW_HEIGHT - App.TAB_HEIGHT) as mechanism_canvas:
 
+				# Get the current link positions
+				a1 = self._a1[self._angle_index]
+				a2 = self._a2[self._angle_index]
+				b1 = self._b1[self._angle_index]
+				b2 = self._b2[self._angle_index]
+				c1 = self._c1[self._angle_index]
+				c2 = self._c2[self._angle_index]
+				d1 = self._d1[self._angle_index]
+				d2 = self._d2[self._angle_index]
+				kl1 = self._kl1[self._angle_index]
+				kl2 = self._kl2[self._angle_index]
+
 				# Draw ground link (D)
 				with dpg.draw_layer(tag="d"):
-					d1 = self._offset
-					d2 = calculate_end_point(d1, self.d*App.LINK_SCALE, self.theta4)
 					dpg.draw_line(d1, d2, tag="link_d", color=App.GREY, thickness=App.LINK_THICKNESS)
 					dpg.draw_circle(d1, 3, tag="joint_d1", color=App.GREY, thickness=App.CIRCLE_THICKNESS)
 					dpg.draw_circle(d2, 3, tag="joint_d2", color=App.GREY, thickness=App.CIRCLE_THICKNESS)
 
 				# Draw input link (A)
 				with dpg.draw_layer(tag="a"):
-					a1 = self._offset
-					a2 = calculate_end_point(a1, self.a*App.LINK_SCALE, self._theta1[self._angle_index])
 					dpg.draw_line(a1, a2, tag="link_a", color=App.RED, thickness=App.LINK_THICKNESS)
 					dpg.draw_circle(a1, 3, tag="joint_a1", color=App.RED, thickness=App.CIRCLE_THICKNESS)
 					dpg.draw_circle(a2, 3, tag="joint_a2", color=App.RED, thickness=App.CIRCLE_THICKNESS)
 
 				# Draw link B
 				with dpg.draw_layer(tag="b"):
-					b1 = a2
-					b2 = calculate_end_point(b1, self.b*App.LINK_SCALE, self._theta2[self._angle_index])
 					dpg.draw_line(b1, b2, tag="link_b", color=App.BLUE, thickness=App.LINK_THICKNESS)
 					dpg.draw_circle(b1, 3, tag="joint_b1", color=App.BLUE, thickness=App.CIRCLE_THICKNESS)
 					dpg.draw_circle(b2, 3, tag="joint_b2", color=App.BLUE, thickness=App.CIRCLE_THICKNESS)
 
 				# Draw link C
 				with dpg.draw_layer(tag="c"):
-					c1 = d2
-					c2 = b2
 					dpg.draw_line(c1, c2, tag="link_c", color=App.YELLOW, thickness=App.LINK_THICKNESS)
 					dpg.draw_circle(c1, 3, tag="joint_c1", color=App.YELLOW, thickness=App.CIRCLE_THICKNESS)
 					dpg.draw_circle(c2, 3, tag="joint_c2", color=App.YELLOW, thickness=App.CIRCLE_THICKNESS)
 
 				# Draw the knife
 				with dpg.draw_layer(tag="k"):
-					kl1 = c2
-					kl2 = calculate_end_point(kl1, self.knife_offset*App.LINK_SCALE, self._theta3[self._angle_index])
 					dpg.draw_line(kl1, kl2, tag="knife_link", color=App.YELLOW, thickness=App.LINK_THICKNESS)
 
-					k1 = kl2
+					k1 = kl1
 					k2 = calculate_end_point(k1, 0.2*App.LINK_SCALE, self._theta3[self._angle_index])
 					k3 = calculate_end_point(k1, 0.05*App.LINK_SCALE, self._theta3[self._angle_index] - 90)
 					dpg.draw_triangle(k1, k2, k3, tag="knife", color=App.BROWN, fill=App.BROWN)
@@ -466,6 +494,16 @@ class App:
 	_angle_index = 0
 
 	# Analysis Data
+	_a1 = []
+	_a2 = []
+	_b1 = []
+	_b2 = []
+	_c1 = []
+	_c2 = []
+	_d1 = []
+	_d2 = []
+	_kl1 = []
+	_kl2 = []
 	_theta1 = []
 	_theta2 = []
 	_theta3 = []

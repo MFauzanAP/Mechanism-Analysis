@@ -1,8 +1,9 @@
 import math
 from numpy import linspace
+from helpers import calculate_end_point
 
 # Calculate theta 2 and 3 from the given input angle
-def calculate_position(a, b, c, d, position, theta1):
+def calculate_position(offset, link_scale, a, b, c, d, knife_offset, position, theta1, theta4):
 
 	# Calculate k-constants
 	K1 = d / a
@@ -26,8 +27,33 @@ def calculate_position(a, b, c, d, position, theta1):
 	theta2 = 2*math.atan((-E + position_modifier*math.sqrt(E**2 - 4*D*F)) / (2*D))
 	theta3 = 2*math.atan((-B + position_modifier*math.sqrt(B**2 - 4*A*C)) / (2*A))
 
+	# Calculate positions of each joint
+	d1 = offset
+	d2 = calculate_end_point(d1, d * link_scale, math.degrees(theta4))
+	a1 = offset
+	a2 = calculate_end_point(a1, a * link_scale, math.degrees(theta1))
+	b1 = a2
+	b2 = calculate_end_point(b1, b * link_scale, math.degrees(theta2))
+	c1 = d2
+	c2 = b2
+	kl1 = c2
+	kl2 = calculate_end_point(kl1, knife_offset * link_scale, math.degrees(theta3))
+
 	# Return the calculated angles
-	return (theta2, theta3)
+	return (
+		theta2,
+		theta3,
+		a1,
+		a2,
+		b1,
+		b2,
+		c1,
+		c2,
+		d1,
+		d2,
+		kl1,
+		kl2,
+	)
 
 # Calculate omega 2 and 3, and linear velocity A, B, and BA
 def calculate_velocity(a, b, c, theta1, omega1, theta2, theta3):
@@ -68,19 +94,36 @@ def calculate_acceleration(a, b, c, theta1, omega1, alpha1, theta2, theta3, omeg
 	return (alpha2, alpha3, accelerationA, accelerationB, accelerationBA)
 
 # Calculate and aggregate position, velocity, and acceleration analysis results for the given input angle
-def calculate_results(a, b, c, d, position, theta1, omega1, alpha1):
+def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, theta1, theta4, omega1, alpha1):
 
 	# Convert to radians
 	theta1 = math.radians(theta1)
 
 	# Solve for position
-	(theta2, theta3) = calculate_position(
+	(
+		theta2,
+		theta3,
+		a1,
+		a2,
+		b1,
+		b2,
+		c1,
+		c2,
+		d1,
+		d2,
+		kl1,
+		kl2,
+	) = calculate_position(
+		offset=offset,
+		link_scale=link_scale,
 		a=a,
 		b=b,
 		c=c,
 		d=d,
+		knife_offset=knife_offset,
 		position=position,
 		theta1=theta1,
+		theta4=theta4,
 	)
 
 	# Solve for velocity
@@ -117,6 +160,16 @@ def calculate_results(a, b, c, d, position, theta1, omega1, alpha1):
 		omega3,
 		alpha2,
 		alpha3,
+		a1,
+		a2,
+		b1,
+		b2,
+		c1,
+		c2,
+		d1,
+		d2,
+		kl1,
+		kl2,
 		velocityA,
 		velocityB,
 		velocityBA,
@@ -126,81 +179,43 @@ def calculate_results(a, b, c, d, position, theta1, omega1, alpha1):
 	)
 
 # Loops through all possible angles, calculates the results, and aggregates them into arrays
-def analyze_mechanism(a, b, c, d, omega1, alpha1, resolution=360, position="OPEN", convert=True):
+def analyze_mechanism(a, b, c, d, knife_offset, theta4, omega1, alpha1, offset=0, link_scale=500, resolution=360, position="OPEN", convert=True):
 
 	# Output arrays
-	theta1_array = []
-	theta2_array = []
-	theta3_array = []
-	omega2_array = []
-	omega3_array = []
-	alpha2_array = []
-	alpha3_array = []
-	velocityA_array = []
-	velocityB_array = []
-	velocityBA_array = []
-	accelerationA_array = []
-	accelerationB_array = []
-	accelerationBA_array = []
+	output = []
+	NUM_RESULTS = 23
+	NUM_SCALAR_RESULTS = 6
 
-	# Loop through all possible angles
-	for theta1 in linspace(1, 360, num=resolution):
+	# For each data returned from the analysis
+	for i in range(NUM_RESULTS):
 
-		# Calculate the results
-		(
-			theta1,
-			theta2,
-			theta3,
-			omega2,
-			omega3,
-			alpha2,
-			alpha3,
-			velocityA,
-			velocityB,
-			velocityBA,
-			accelerationA,
-			accelerationB,
-			accelerationBA,
-		) = calculate_results(a, b, c, d, position, theta1, omega1, alpha1)
+		# Append an empty array
+		output.append([])
 
-		# Convert units if specified
-		if convert:
-			theta1 = math.degrees(theta1)
-			theta2 = math.degrees(theta2)
-			theta3 = math.degrees(theta3)
-			omega2 = math.degrees(omega2)
-			omega3 = math.degrees(omega3)
-			alpha2 = math.degrees(alpha2)
-			alpha3 = math.degrees(alpha3)
+		# Loop through all possible angles
+		for theta1 in linspace(1, 360, num=resolution):
 
-		# Append to the output arrays
-		theta1_array.append(theta1)
-		theta2_array.append(theta2)
-		theta3_array.append(theta3)
-		omega2_array.append(omega2)
-		omega3_array.append(omega3)
-		alpha2_array.append(alpha2)
-		alpha3_array.append(alpha3)
-		velocityA_array.append(velocityA)
-		velocityB_array.append(velocityB)
-		velocityBA_array.append(velocityBA)
-		accelerationA_array.append(accelerationA)
-		accelerationB_array.append(accelerationB)
-		accelerationBA_array.append(accelerationBA)
+			# Calculate the results
+			results = calculate_results(
+				offset=offset,
+				link_scale=link_scale,
+				a=a,
+				b=b,
+				c=c,
+				d=d,
+				knife_offset=knife_offset,
+				position=position,
+				theta1=theta1,
+				theta4=theta4,
+				omega1=omega1,
+				alpha1=alpha1,
+			)
+
+			# Convert units if specified
+			if convert and i < NUM_SCALAR_RESULTS: output[i].append(math.degrees(results[i]))
+
+			# Append to the output arrays
+			else: output[i].append(results[i])
 
 	# Return the results
-	return (
-		theta1_array,
-		theta2_array,
-		theta3_array,
-		omega2_array,
-		omega3_array,
-		alpha2_array,
-		alpha3_array,
-		velocityA_array,
-		velocityB_array,
-		velocityBA_array,
-		accelerationA_array,
-		accelerationB_array,
-		accelerationBA_array,
-	)
+	return output
