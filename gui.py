@@ -150,11 +150,12 @@ class App:
 		self.create_mechanism_drawing()
 		while dpg.is_dearpygui_running():
 			if self.running:
-				new_angle = self.current_angle + (self.omega1 * 6 * dpg.get_delta_time()) % 360
+				new_angle = (self.current_angle + (self.omega1 * 6 * dpg.get_delta_time())) % 360
 				new_angle_index = math.floor(new_angle / (360 / self.resolution)) % (self.resolution - 1)
 				self.current_angle = new_angle
 				self._angle_index = new_angle_index
 				self.update_mechanism()
+				self.update_plots()
 			dpg.render_dearpygui_frame()
 		dpg.destroy_context()
 
@@ -245,6 +246,15 @@ class App:
 		dy_pos = (max_x + App.DIMENSION_OFFSET*App.LINK_SCALE, min_y + ((dy2[1] - dy1[1]) / 2))
 		dy_text = f"{round((dy2[1] - dy1[1]) / App.LINK_SCALE, 2)} m"
 		dpg.configure_item("dim_y_text", pos=dy_pos, text=dy_text)
+
+	# Update the graphical plots based on the current angle
+	def update_plots(self):
+		# Update the current angle indicators
+		dpg.configure_item("pos_indicator", default_value=self.current_angle)
+		dpg.configure_item("mag_velocity_indicator", default_value=self.current_angle)
+		dpg.configure_item("comp_velocity_indicator", default_value=self.current_angle)
+		dpg.configure_item("mag_acceleration_indicator", default_value=self.current_angle)
+		dpg.configure_item("comp_acceleration_indicator", default_value=self.current_angle)
 
 	# Create mechanism drawing window
 	def create_mechanism_drawing(self):
@@ -403,6 +413,15 @@ class App:
 			dpg.add_button(label="Update and Analyze")
 			dpg.add_button(label="Pause" if self.running else "Resume", tag="toggle_running", callback=self.toggle_running)
 
+	def handle_drag_pos_indicator(self, tag):
+		new_angle = dpg.get_value(tag)
+		new_angle_index = math.floor(new_angle / (360 / self.resolution)) % (self.resolution - 1)
+		self.current_angle = new_angle
+		self._angle_index = new_angle_index
+		self.running = False
+		self.update_mechanism()
+		self.update_plots()
+
 	# Create position plot window
 	def create_position_plot(self):
 		dpg.add_collapsing_header(label="Position Analysis", tag="position_analysis", parent="inspector", default_open=True)
@@ -414,6 +433,7 @@ class App:
 				dpg.add_plot_axis(dpg.mvYAxis, label="Output Angle (degree)", tag="position_y_axis")
 				dpg.add_line_series(self._theta1, self._theta2, label="Theta 2", parent="position_y_axis")
 				dpg.add_line_series(self._theta1, self._theta3, label="Theta 3", parent="position_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="pos_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
 	# Create velocity plot window
 	def create_velocity_plot(self):
@@ -436,6 +456,7 @@ class App:
 				dpg.add_line_series(self._theta1, vA, label="Velocity 1", parent="mag_velocity_y_axis")
 				dpg.add_line_series(self._theta1, vBA, label="Velocity 2", parent="mag_velocity_y_axis")
 				dpg.add_line_series(self._theta1, vB, label="Velocity 3", parent="mag_velocity_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="mag_velocity_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
 			dpg.add_text("Velocity Components (m/s)")
 			with dpg.plot():
@@ -446,6 +467,7 @@ class App:
 				dpg.add_line_series(self._theta1, tang_vA, label="Tangential 1", parent="comp_velocity_y_axis")
 				dpg.add_line_series(self._theta1, tang_vBA, label="Tangential 2", parent="comp_velocity_y_axis")
 				dpg.add_line_series(self._theta1, tang_vB, label="Tangential 3", parent="comp_velocity_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="comp_velocity_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
 	# Create acceleration plot window
 	def create_acceleration_plot(self):
@@ -472,6 +494,7 @@ class App:
 				dpg.add_line_series(self._theta1, aA, label="Acceleration 1", parent="mag_acceleration_y_axis")
 				dpg.add_line_series(self._theta1, aBA, label="Acceleration 2", parent="mag_acceleration_y_axis")
 				dpg.add_line_series(self._theta1, aB, label="Acceleration 3", parent="mag_acceleration_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="mag_acceleration_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
 			dpg.add_text("Acceleration Components (m/s^2)")
 			with dpg.plot():
@@ -485,6 +508,7 @@ class App:
 				dpg.add_line_series(self._theta1, radial_aBA, label="Radial 2", parent="comp_acceleration_y_axis")
 				dpg.add_line_series(self._theta1, tang_aB, label="Tangential 3", parent="comp_acceleration_y_axis")
 				dpg.add_line_series(self._theta1, radial_aB, label="Radial 3", parent="comp_acceleration_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="comp_acceleration_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
 	# Analysis Settings
 	_velocity_scale = VELOCITY_SCALE
