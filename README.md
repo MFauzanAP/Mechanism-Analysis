@@ -26,17 +26,18 @@ The program is still under development and will be updated with new features and
 
 ### Required
 - [ ] Mechanism dynamic force analysis for all links and at knife-edge
-- [ ] Mechanism factor of safety and performance analysis
+- [ ] Mechanism transmission angle and mechanical advantage analysis
+- [ ] Mechanism factor of safety and dynamic analysis (forces and torque)
 - [ ] Ability to change the link lengths, ground angle, input angle, speed, and mechanism position (open or crossed)
 - [ ] Path tracing of rocker linkage
 - [ ] Show current angles, velocities, and accelerations in each of their plots 
+- [ ] Toggle between velocity, acceleration, and force arrows
 
 ### Extra
 - [ ] Refactor program to calculate joint positions inside lib.py, then use these to calculate min and max bounding boxes and plots for dimension changes
 - [ ] Slow down simulation and jump to specific time or angle
-- [ ] Plots for omega and alpha values
+- [x] Plots for omega and alpha values
 - [x] Marker showing current input angle in plots
-- [ ] Arrows showing acceleration tangential and radial vectors
 - [ ] Arcs showing current angle of links
 - [ ] Isolate a single link and show the changes in its angle, velocity, and acceleration
 - [ ] Add ability to move the offset position
