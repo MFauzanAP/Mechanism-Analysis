@@ -8,7 +8,7 @@ class App:
 	# Constants
 	WINDOW_WIDTH = 1400		# Width of the window
 	WINDOW_HEIGHT = 800		# Height of the window
-	TAB_WIDTH = 420			# Width of the plot tabs at the bottom of the window
+	TAB_WIDTH = 400			# Width of the plot tabs at the bottom of the window
 	TAB_HEIGHT = 400		# Height of the settings and plot tabs at the bottom of the window
 
 	# Colors
@@ -26,29 +26,23 @@ class App:
 	# Sizes
 	LINK_SCALE = 500
 	LINK_THICKNESS = 3
-	VELOCITY_SCALE = 10
+	VELOCITY_SCALE = 80
 	VELOCITY_THICKNESS = 6
 	CIRCLE_THICKNESS = 8
 	DIMENSION_OFFSET = 0.1
 	DIMENSION_THICKNESS = 4
 
-	# Link Lengths
+	# Link Lengths (m)
 	a = 0.1
 	b = 0.45
 	c = 0.25
 	d = 0.45
-
-	# Ground Angle
-	theta4 = 0
-
-	# Input Speed (deg/s)
-	omega1 = 60
-
-	# Motor Acceleration (deg/s^2)
-	alpha1 = 0
-
-	# Knife Offset
 	knife_offset = 0.1
+
+	# Kinematic Input
+	theta4 = 0				# Ground Angle (deg)
+	omega1 = 10				# Input Speed (rpm)
+	alpha1 = 0				# Motor Acceleration (deg/s^2)
 
 	# Analysis Settings
 	current_angle = 180		# Current angle of the input link
@@ -106,13 +100,22 @@ class App:
 			d=self.d,
 			knife_offset=self.knife_offset,
 			theta4=self.theta4,
-			omega1=self.omega1,
+			omega1=self.omega1 * 6,
 			alpha1=self.alpha1,
 			offset=self._offset,
 			link_scale=App.LINK_SCALE,
 			resolution=self.resolution,
 			position=self.position,
 		)
+
+		# Calculate maximum linear velocity
+		max_velocity = max([magnitude(v) for v in velocityA] + [magnitude(v) for v in velocityB] + [magnitude(v) for v in velocityBA])
+
+		# Calculate new scale
+		velocity_scale = App.VELOCITY_SCALE / max_velocity
+
+		# Update scales
+		self._velocity_scale = velocity_scale
 
 		# Update mechanism properties
 		self._theta1 = theta1
@@ -147,7 +150,7 @@ class App:
 		self.create_mechanism_drawing()
 		while dpg.is_dearpygui_running():
 			if self.running:
-				new_angle = self.current_angle + (self.omega1 * dpg.get_delta_time()) % 360
+				new_angle = self.current_angle + (self.omega1 * 6 * dpg.get_delta_time()) % 360
 				new_angle_index = math.floor(new_angle / (360 / self.resolution)) % (self.resolution - 1)
 				self.current_angle = new_angle
 				self._angle_index = new_angle_index
@@ -208,11 +211,11 @@ class App:
 		vBA = self._velocityBA[self._angle_index]
 
 		vA1 = a2
-		vA2 = calculate_end_point(vA1, magnitude(vA)*App.VELOCITY_SCALE, angle(vA))
+		vA2 = calculate_end_point(vA1, magnitude(vA)*self._velocity_scale, angle(vA))
 		vB1 = b2
-		vB2 = calculate_end_point(vB1, magnitude(vB)*App.VELOCITY_SCALE, angle(vB))
+		vB2 = calculate_end_point(vB1, magnitude(vB)*self._velocity_scale, angle(vB))
 		vBA1 = c2
-		vBA2 = calculate_end_point(vBA1, magnitude(vBA)*App.VELOCITY_SCALE, angle(vBA))
+		vBA2 = calculate_end_point(vBA1, magnitude(vBA)*self._velocity_scale, angle(vBA))
 
 		dpg.configure_item("vA_arrow", p1=vA2, p2=vA1)
 		dpg.configure_item("vB_arrow", p1=vB2, p2=vB1)
@@ -310,11 +313,11 @@ class App:
 					vBA = self._velocityBA[self._angle_index]
 
 					vA1 = a2
-					vA2 = calculate_end_point(vA1, magnitude(vA)*App.VELOCITY_SCALE, angle(vA))
+					vA2 = calculate_end_point(vA1, magnitude(vA)*self._velocity_scale, angle(vA))
 					vBA1 = b2
-					vBA2 = calculate_end_point(vBA1, magnitude(vBA)*App.VELOCITY_SCALE, angle(vBA))
+					vBA2 = calculate_end_point(vBA1, magnitude(vBA)*self._velocity_scale, angle(vBA))
 					vB1 = c2
-					vB2 = calculate_end_point(vB1, magnitude(vB)*App.VELOCITY_SCALE, angle(vB))
+					vB2 = calculate_end_point(vB1, magnitude(vB)*self._velocity_scale, angle(vB))
 
 					dpg.draw_arrow(vA2, vA1, tag="vA_arrow", color=App.RED_50, thickness=App.VELOCITY_THICKNESS)
 					dpg.draw_arrow(vBA2, vBA1, tag="vBA_arrow", color=App.BLUE_50, thickness=App.VELOCITY_THICKNESS)
@@ -388,10 +391,10 @@ class App:
 			dpg.add_slider_float(label="B", default_value=self.b, max_value=1)
 			dpg.add_slider_float(label="C", default_value=self.c, max_value=1)
 			dpg.add_slider_float(label="Ground Link D", default_value=self.d, max_value=1)
-			dpg.add_text("Ground Angle")
-			dpg.add_slider_float(label="degree", default_value=self.theta4, min_value=0, max_value=360)
-			dpg.add_text("Input Speed")
-			dpg.add_slider_float(label="rpm", default_value=self.omega1, min_value=5, max_value=10)
+			dpg.add_text("Kinematic Input")
+			dpg.add_slider_float(label="Ground Angle (deg)", default_value=self.theta4, min_value=0, max_value=360)
+			dpg.add_slider_float(label="Input Speed (rpm)", default_value=self.omega1, min_value=5, max_value=30)
+			dpg.add_slider_float(label="Motor Acc. (deg/s^2)", default_value=self.alpha1, min_value=0, max_value=5)
 			dpg.add_text("Analysis Settings")
 			dpg.add_slider_float(label="Input Angle", default_value=self.current_angle, min_value=0, max_value=360)
 			dpg.add_slider_int(label="Resolution", default_value=App.resolution, max_value=500)
@@ -490,6 +493,7 @@ class App:
 	_acceleration_analysis = None
 
 	# Analysis Settings
+	_velocity_scale = VELOCITY_SCALE
 	_offset = (WINDOW_WIDTH * 0.3, (WINDOW_HEIGHT - TAB_HEIGHT) * 0.75)
 	_angle_index = 0
 
