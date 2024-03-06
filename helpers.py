@@ -11,3 +11,9 @@ def magnitude(vector):
 # Calculate the angle of a vector
 def angle(vector):
 	return math.degrees(math.atan2(vector[1], vector[0]))
+
+# Rotates a vector by the given angle (deg) clockwise
+def rotate(vector, angle):
+	x = vector[0] * math.cos(math.radians(-angle)) - vector[1] * math.sin(math.radians(-angle))
+	y = vector[0] * math.sin(math.radians(-angle)) + vector[1] * math.cos(math.radians(-angle))
+	return (x, y)

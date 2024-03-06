@@ -1,7 +1,7 @@
 import math
 from lib import analyze_mechanism
 from dearpygui import dearpygui as dpg
-from helpers import angle, calculate_end_point, magnitude
+from helpers import angle, calculate_end_point, magnitude, rotate
 
 class App:
 
@@ -33,7 +33,7 @@ class App:
 	DIMENSION_THICKNESS = 4
 
 	# Link Lengths (m)
-	a = 0.1
+	a = 0.15
 	b = 0.45
 	c = 0.25
 	d = 0.45
@@ -444,14 +444,27 @@ class App:
 			vB = [ magnitude(v) for v in self._velocityB ]
 			vBA = [ magnitude(v) for v in self._velocityBA ]
 
+			signed_vA = [ rotate(self._velocityA[i], self._theta1[i])[1] for i in range(len(self._velocityA)) ]
+			signed_vB = [ rotate(self._velocityB[i], self._theta3[i])[1] for i in range(len(self._velocityB)) ]
+			signed_vBA = [ rotate(self._velocityBA[i], self._theta2[i])[1] for i in range(len(self._velocityBA)) ]
+
 			with dpg.plot():
 				dpg.add_plot_legend()
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
-				dpg.add_plot_axis(dpg.mvYAxis, label="Output Velocity (m/s)", tag="velocity_y_axis")
-				dpg.add_line_series(self._theta1, vA, label="Velocity A", parent="velocity_y_axis")
-				dpg.add_line_series(self._theta1, vB, label="Velocity B", parent="velocity_y_axis")
-				dpg.add_line_series(self._theta1, vBA, label="Velocity BA", parent="velocity_y_axis")
+				dpg.add_plot_axis(dpg.mvYAxis, label="Output Linear Velocity (m/s)", tag="linear_velocity_y_axis")
+				dpg.add_line_series(self._theta1, vA, label="Velocity A", parent="linear_velocity_y_axis")
+				dpg.add_line_series(self._theta1, vB, label="Velocity B", parent="linear_velocity_y_axis")
+				dpg.add_line_series(self._theta1, vBA, label="Velocity BA", parent="linear_velocity_y_axis")
+
+			with dpg.plot():
+				dpg.add_plot_legend()
+				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+				dpg.set_axis_limits(dpg.last_item(), 0, 360)
+				dpg.add_plot_axis(dpg.mvYAxis, label="Output Signed Velocity (m/s)", tag="signed_velocity_y_axis")
+				dpg.add_line_series(self._theta1, signed_vA, label="Velocity A", parent="signed_velocity_y_axis")
+				dpg.add_line_series(self._theta1, signed_vB, label="Velocity B", parent="signed_velocity_y_axis")
+				dpg.add_line_series(self._theta1, signed_vBA, label="Velocity BA", parent="signed_velocity_y_axis")
 
 		# Save the velocity plot window
 		self._velocity_analysis = velocity_analysis
@@ -472,14 +485,27 @@ class App:
 			aB = [ magnitude(a) for a in self._accelerationB ]
 			aBA = [ magnitude(a) for a in self._accelerationBA ]
 
+			signed_aA = [ rotate(self._accelerationA[i], self._theta1[i])[1] for i in range(len(self._accelerationA)) ]
+			signed_aB = [ rotate(self._accelerationB[i], self._theta3[i])[1] for i in range(len(self._accelerationB)) ]
+			signed_aBA = [ rotate(self._accelerationBA[i], self._theta2[i])[1] for i in range(len(self._accelerationBA)) ]
+
 			with dpg.plot():
 				dpg.add_plot_legend()
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
-				dpg.add_plot_axis(dpg.mvYAxis, label="Output Acceleration (m/s^2)", tag="acceleration_y_axis")
-				dpg.add_line_series(self._theta1, aA, label="Acceleration A", parent="acceleration_y_axis")
-				dpg.add_line_series(self._theta1, aB, label="Acceleration B", parent="acceleration_y_axis")
-				dpg.add_line_series(self._theta1, aBA, label="Acceleration BA", parent="acceleration_y_axis")
+				dpg.add_plot_axis(dpg.mvYAxis, label="Output Linear Acceleration (m/s^2)", tag="linear_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aA, label="Acceleration A", parent="linear_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aB, label="Acceleration B", parent="linear_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aBA, label="Acceleration BA", parent="linear_acceleration_y_axis")
+
+			with dpg.plot():
+				dpg.add_plot_legend()
+				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+				dpg.set_axis_limits(dpg.last_item(), 0, 360)
+				dpg.add_plot_axis(dpg.mvYAxis, label="Output Signed Acceleration (m/s^2)", tag="signed_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, signed_aA, label="Acceleration A", parent="signed_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, signed_aB, label="Acceleration B", parent="signed_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, signed_aBA, label="Acceleration BA", parent="signed_acceleration_y_axis")
 
 		# Save the acceleration plot window
 		self._acceleration_analysis = acceleration_analysis
