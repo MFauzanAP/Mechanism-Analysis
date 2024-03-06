@@ -30,7 +30,7 @@ The program is still under development and will be updated with new features and
 - [ ] Mechanism factor of safety and dynamic analysis (forces and torque)
 - [ ] Ability to change the link lengths, ground angle, input angle, speed, and mechanism position (open or crossed)
 - [ ] Path tracing of rocker linkage
-- [ ] Show current angles, velocities, and accelerations in each of their plots 
+- [x] Show current angles, velocities, and accelerations in each of their plots 
 - [ ] Toggle between velocity, acceleration, and force arrows
 
 ### Extra

@@ -259,6 +259,50 @@ class App:
 
 	# Update the graphical plots based on the current angle
 	def update_plots(self):
+		# Update position values
+		t1 = round(self._theta1[self._angle_index], 2)
+		t2 = round(self._theta2[self._angle_index], 2)
+		t3 = round(self._theta3[self._angle_index], 2)
+		dpg.configure_item("theta1_value", default_value=f"Theta 1 (Input Angle): {t1} deg")
+		dpg.configure_item("theta2_value", default_value=f"Theta 2: {t2} deg")
+		dpg.configure_item("theta3_value", default_value=f"Theta 3: {t3} deg")
+
+		# Update velocity values
+		omega2 = round(self._omega2[self._angle_index], 2)
+		omega3 = round(self._omega3[self._angle_index], 2)
+		dpg.configure_item("omega2_value", default_value=f"Omega 2: {omega2} rpm")
+		dpg.configure_item("omega3_value", default_value=f"Omega 3: {omega3} rpm")
+
+		vBA = round(magnitude(self._velocityBA[self._angle_index]), 2)
+		vB = round(magnitude(self._velocityB[self._angle_index]), 2)
+		dpg.configure_item("mag_vBA_value", default_value=f"Magnitudal Velocity 2: {vBA} m/s")
+		dpg.configure_item("mag_vB_value", default_value=f"Magnitudal Velocity 3: {vB} m/s")
+
+		tang_vBA = round(rotate(self._velocityBA[self._angle_index], self._theta2[self._angle_index])[1], 2)
+		tang_vB = round(rotate(self._velocityB[self._angle_index], self._theta3[self._angle_index])[1], 2)
+		dpg.configure_item("tang_vBA_value", default_value=f"Tangential Velocity 2: {tang_vBA} m/s")
+		dpg.configure_item("tang_vB_value", default_value=f"Tangential Velocity 3: {tang_vB} m/s")
+
+		# Update acceleration values
+		alpha2 = round(self._alpha2[self._angle_index], 2)
+		alpha3 = round(self._alpha3[self._angle_index], 2)
+		dpg.configure_item("alpha2_value", default_value=f"Alpha 2: {alpha2} deg/s^2")
+		dpg.configure_item("alpha3_value", default_value=f"Alpha 3: {alpha3} deg/s^2")
+
+		aBA = round(magnitude(self._accelerationBA[self._angle_index]), 2)
+		aB = round(magnitude(self._accelerationB[self._angle_index]), 2)
+		dpg.configure_item("mag_aBA_value", default_value=f"Magnitudal Acceleration 2: {aBA} m/s^2")
+		dpg.configure_item("mag_aB_value", default_value=f"Magnitudal Acceleration 3: {aB} m/s^2")
+
+		tang_aBA = round(rotate(self._accelerationBA[self._angle_index], self._theta2[self._angle_index])[1], 2)
+		radial_aBA = round(rotate(self._accelerationBA[self._angle_index], self._theta2[self._angle_index])[0], 2)
+		tang_aB = round(rotate(self._accelerationB[self._angle_index], self._theta3[self._angle_index])[1], 2)
+		radial_aB = round(rotate(self._accelerationB[self._angle_index], self._theta3[self._angle_index])[0], 2)
+		dpg.configure_item("tang_aBA_value", default_value=f"Tangential Acceleration 2: {tang_aBA} m/s^2")
+		dpg.configure_item("radial_aBA_value", default_value=f"Radial Acceleration 2: {radial_aBA} m/s^2")
+		dpg.configure_item("tang_aB_value", default_value=f"Tangential Acceleration 3: {tang_aB} m/s^2")
+		dpg.configure_item("radial_aB_value", default_value=f"Radial Acceleration 3: {radial_aB} m/s^2")
+
 		# Update the current angle indicators
 		dpg.configure_item("pos_indicator", default_value=self.current_angle)
 		dpg.configure_item("angular_velocity_indicator", default_value=self.current_angle)
@@ -427,8 +471,22 @@ class App:
 
 	# Create position plot window
 	def create_position_plot(self):
-		dpg.add_collapsing_header(label="Position Analysis", tag="position_analysis", parent="inspector", default_open=True)
+		dpg.add_collapsing_header(label="Position Analysis", tag="position_analysis", parent="inspector")
 		with dpg.group(parent="position_analysis"):
+			t1 = round(self._theta1[self._angle_index], 2)
+			t2 = round(self._theta2[self._angle_index], 2)
+			t3 = round(self._theta3[self._angle_index], 2)
+			t4 = round(self.theta4, 2)
+
+			dpg.add_text(f"Theta 1 (Input Angle): {t1} deg", tag="theta1_value")
+			dpg.add_text(f"Theta 2: {t2} deg", tag="theta2_value")
+			dpg.add_text(f"Theta 3: {t3} deg", tag="theta3_value")
+			dpg.add_text(f"Theta 4 (Ground Angle): {t4} deg", tag="theta4_value")
+
+			dpg.add_text(f"Range of Theta 2: {round(min(self._theta2), 2)} to {round(max(self._theta2), 2)} deg")
+			dpg.add_text(f"Range of Theta 3: {round(min(self._theta3), 2)} to {round(max(self._theta3), 2)} deg")
+
+			dpg.add_text(f"Bounding Box: {round((self._all_max_x - self._all_min_x) / App.LINK_SCALE, 2)} m x {round((self._all_max_y - self._all_min_y) / App.LINK_SCALE, 2)} m")
 			with dpg.plot():
 				dpg.add_plot_legend()
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
@@ -440,14 +498,15 @@ class App:
 
 	# Create velocity plot window
 	def create_velocity_plot(self):
-		dpg.add_collapsing_header(label="Velocity Analysis", tag="velocity_analysis", parent="inspector", default_open=True)
+		dpg.add_collapsing_header(label="Velocity Analysis", tag="velocity_analysis", parent="inspector")
 		with dpg.group(parent="velocity_analysis"):
-			vA = [ magnitude(v) for v in self._velocityA ]
-			vB = [ magnitude(v) for v in self._velocityB ]
-			vBA = [ magnitude(v) for v in self._velocityBA ]
 			omega1 = round(self.omega1, 2)
 			omega2 = round(self._omega2[self._angle_index], 2)
 			omega3 = round(self._omega3[self._angle_index], 2)
+
+			dpg.add_text(f"Omega 1 (Input Speed): {omega1} rpm", tag="omega1_value")
+			dpg.add_text(f"Omega 2: {omega2} rpm", tag="omega2_value")
+			dpg.add_text(f"Omega 3: {omega3} rpm", tag="omega3_value")
 
 			dpg.add_text("Angular Velocity (rpm)")
 			with dpg.plot():
@@ -507,11 +566,15 @@ class App:
 
 	# Create acceleration plot window
 	def create_acceleration_plot(self):
-		dpg.add_collapsing_header(label="Acceleration Analysis", tag="acceleration_analysis", parent="inspector", default_open=True)
+		dpg.add_collapsing_header(label="Acceleration Analysis", tag="acceleration_analysis", parent="inspector")
 		with dpg.group(parent="acceleration_analysis"):
 			alpha1 = round(self.alpha1, 2)
 			alpha2 = round(self._alpha2[self._angle_index], 2)
 			alpha3 = round(self._alpha3[self._angle_index], 2)
+
+			dpg.add_text(f"Alpha 1 (Input Speed): {alpha1} rpm", tag="alpha1_value")
+			dpg.add_text(f"Alpha 2: {alpha2} rpm", tag="alpha2_value")
+			dpg.add_text(f"Alpha 3: {alpha3} rpm", tag="alpha3_value")
 
 			dpg.add_text("Angular Acceleration (deg/s^2)")
 			with dpg.plot():
@@ -527,13 +590,13 @@ class App:
 			aBA = round(magnitude(self._accelerationBA[self._angle_index]), 2)
 			aB = round(magnitude(self._accelerationB[self._angle_index]), 2)
 
-			tang_aA = [ rotate(self._accelerationA[i], self._theta1[i])[1] for i in range(len(self._accelerationA)) ]
-			tang_aB = [ rotate(self._accelerationB[i], self._theta3[i])[1] for i in range(len(self._accelerationB)) ]
-			tang_aBA = [ rotate(self._accelerationBA[i], self._theta2[i])[1] for i in range(len(self._accelerationBA)) ]
+			aA_list = [ magnitude(a) for a in self._accelerationA ]
+			aBA_list = [ magnitude(a) for a in self._accelerationBA ]
+			aB_list = [ magnitude(a) for a in self._accelerationB ]
 
-			radial_aA = [ rotate(self._accelerationA[i], self._theta1[i])[0] for i in range(len(self._accelerationA)) ]
-			radial_aB = [ rotate(self._accelerationB[i], self._theta3[i])[0] for i in range(len(self._accelerationB)) ]
-			radial_aBA = [ rotate(self._accelerationBA[i], self._theta2[i])[0] for i in range(len(self._accelerationBA)) ]
+			dpg.add_text(f"Magnitudal Velocity 1 (Input Speed): {aA} m/s^2", tag="mag_aA_value")
+			dpg.add_text(f"Magnitudal Velocity 2: {aBA} m/s^2", tag="mag_aBA_value")
+			dpg.add_text(f"Magnitudal Velocity 3: {aB} m/s^2", tag="mag_aB_value")
 
 			dpg.add_text("Magnitudal Acceleration (m/s^2)")
 			with dpg.plot():
@@ -541,10 +604,31 @@ class App:
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
 				dpg.add_plot_axis(dpg.mvYAxis, label="Output Magnitudal Acceleration (m/s^2)", tag="mag_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, aA, label="Acceleration 1", parent="mag_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, aBA, label="Acceleration 2", parent="mag_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, aB, label="Acceleration 3", parent="mag_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aA_list, label="Acceleration 1", parent="mag_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aBA_list, label="Acceleration 2", parent="mag_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aB_list, label="Acceleration 3", parent="mag_acceleration_y_axis")
 				dpg.add_drag_line(label="Current Angle", tag="mag_acceleration_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+			tang_aA = round(rotate(self._accelerationA[self._angle_index], self._theta1[self._angle_index])[1], 2)
+			radial_aA = round(rotate(self._accelerationA[self._angle_index], self._theta1[self._angle_index])[0], 2)
+			tang_aBA = round(rotate(self._accelerationBA[self._angle_index], self._theta2[self._angle_index])[1], 2)
+			radial_aBA = round(rotate(self._accelerationBA[self._angle_index], self._theta2[self._angle_index])[0], 2)
+			tang_aB = round(rotate(self._accelerationB[self._angle_index], self._theta3[self._angle_index])[1], 2)
+			radial_aB = round(rotate(self._accelerationB[self._angle_index], self._theta3[self._angle_index])[0], 2)
+
+			tang_aA_list = [ rotate(self._accelerationA[i], self._theta1[i])[1] for i in range(len(self._accelerationA)) ]
+			radial_aA_list = [ rotate(self._accelerationA[i], self._theta1[i])[0] for i in range(len(self._accelerationA)) ]
+			tang_aBA_list = [ rotate(self._accelerationBA[i], self._theta2[i])[1] for i in range(len(self._accelerationBA)) ]
+			radial_aBA_list = [ rotate(self._accelerationBA[i], self._theta2[i])[0] for i in range(len(self._accelerationBA)) ]
+			tang_aB_list = [ rotate(self._accelerationB[i], self._theta3[i])[1] for i in range(len(self._accelerationB)) ]
+			radial_aB_list = [ rotate(self._accelerationB[i], self._theta3[i])[0] for i in range(len(self._accelerationB)) ]
+
+			dpg.add_text(f"Tangential Acceleration 1: {tang_aA} m/s^2", tag="tang_aA_value")
+			dpg.add_text(f"Radial Acceleration 1: {radial_aA} m/s^2", tag="radial_aA_value")
+			dpg.add_text(f"Tangential Acceleration 2: {tang_aBA} m/s^2", tag="tang_aBA_value")
+			dpg.add_text(f"Radial Acceleration 2: {radial_aBA} m/s^2", tag="radial_aBA_value")
+			dpg.add_text(f"Tangential Acceleration 3: {tang_aB} m/s^2", tag="tang_aB_value")
+			dpg.add_text(f"Radial Acceleration 3: {radial_aB} m/s^2", tag="radial_aB_value")
 
 			dpg.add_text("Acceleration Components (m/s^2)")
 			with dpg.plot():
@@ -552,17 +636,17 @@ class App:
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
 				dpg.add_plot_axis(dpg.mvYAxis, label="Output Acceleration Components (m/s^2)", tag="comp_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, tang_aA, label="Tangential 1", parent="comp_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, radial_aA, label="Radial 1", parent="comp_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, tang_aBA, label="Tangential 2", parent="comp_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, radial_aBA, label="Radial 2", parent="comp_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, tang_aB, label="Tangential 3", parent="comp_acceleration_y_axis")
-				dpg.add_line_series(self._theta1, radial_aB, label="Radial 3", parent="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, tang_aA_list, label="Tangential 1", parent="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, radial_aA_list, label="Radial 1", parent="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, tang_aBA_list, label="Tangential 2", parent="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, radial_aBA_list, label="Radial 2", parent="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, tang_aB_list, label="Tangential 3", parent="comp_acceleration_y_axis")
+				dpg.add_line_series(self._theta1, radial_aB_list, label="Radial 3", parent="comp_acceleration_y_axis")
 				dpg.add_drag_line(label="Current Angle", tag="comp_acceleration_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
 	# Analysis Settings
 	_velocity_scale = VELOCITY_SCALE
-	_offset = (WINDOW_WIDTH * 0.3, WINDOW_HEIGHT * 0.6)
+	_offset = (WINDOW_WIDTH * 0.25, WINDOW_HEIGHT * 0.55)
 	_angle_index = 0
 
 	# Analysis Data
