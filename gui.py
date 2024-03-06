@@ -32,58 +32,29 @@ class App:
 	DIMENSION_OFFSET = 0.1
 	DIMENSION_THICKNESS = 4
 
-	# Windows
-	mechanism_settings = None
-	mechanism_drawing = None
-	mechanism_canvas = None
-	position_analysis = None
-	velocity_analysis = None
-	acceleration_analysis = None
-
 	# Link Lengths
 	a = 0.1
 	b = 0.45
 	c = 0.25
 	d = 0.45
 
-	# Link Angles
-	theta1 = []
-	theta2 = []
-	theta3 = []
-	theta4 = 0		# Ground Angle
+	# Ground Angle
+	theta4 = 0
 
-	# Link Angular Velocities
-	omega1 = 60		# Input Speed (deg/s)
-	omega2 = 0
-	omega3 = 0
-	omega4 = 0
+	# Input Speed (deg/s)
+	omega1 = 60
 
-	# Link Linear Velocities
-	velocityA = (0, 0)
-	velocityB = (0, 0)
-	velocityBA = (0, 0)
-
-	# Link Angular Accelerations
-	alpha1 = 0		# Motor Acceleration (deg/s^2)
-	alpha2 = 0
-	alpha3 = 0
-	alpha4 = 0
-
-	# Link Linear Accelerations
-	accelerationA = (0, 0)
-	accelerationB = (0, 0)
-	accelerationBA = (0, 0)
+	# Motor Acceleration (deg/s^2)
+	alpha1 = 0
 
 	# Knife Offset
 	knife_offset = 0.1
 
 	# Analysis Settings
-	offset = (WINDOW_WIDTH * 0.3, (WINDOW_HEIGHT - TAB_HEIGHT) * 0.75)
 	current_angle = 180		# Current angle of the input link
-	angle_index = 0			# Index of the current angle
 	resolution = 360
 	position = "crossed"
-	running = False
+	running = True
 
 	# Constructor for the app, sets up the PyGUI context and viewport
 	def __init__(self):
@@ -130,32 +101,32 @@ class App:
 		)
 
 		# Update mechanism properties
-		self.theta1 = theta1
-		self.theta2 = theta2
-		self.theta3 = theta3
-		self.omega2 = omega2
-		self.omega3 = omega3
-		self.alpha2 = alpha2
-		self.alpha3 = alpha3
-		self.velocityA = velocityA
-		self.velocityB = velocityB
-		self.velocityBA = velocityBA
-		self.accelerationA = accelerationA
-		self.accelerationB = accelerationB
-		self.accelerationBA = accelerationBA
+		self._theta1 = theta1
+		self._theta2 = theta2
+		self._theta3 = theta3
+		self._omega2 = omega2
+		self._omega3 = omega3
+		self._alpha2 = alpha2
+		self._alpha3 = alpha3
+		self._velocityA = velocityA
+		self._velocityB = velocityB
+		self._velocityBA = velocityBA
+		self._accelerationA = accelerationA
+		self._accelerationB = accelerationB
+		self._accelerationBA = accelerationBA
 
 	# Runs the app and starts the render loop
 	def run(self):
 		dpg.show_viewport()
 		dpg.set_viewport_vsync(True)
-		self.angle_index = self.current_angle % (self.resolution - 1)
+		self._angle_index = self.current_angle % (self.resolution - 1)
 		self.create_mechanism_drawing()
 		while dpg.is_dearpygui_running():
 			if self.running:
 				new_angle = self.current_angle + (self.omega1 * dpg.get_delta_time()) % 360
 				new_angle_index = math.floor(new_angle / (360 / self.resolution)) % (self.resolution - 1)
 				self.current_angle = new_angle
-				self.angle_index = new_angle_index
+				self._angle_index = new_angle_index
 				self.update_mechanism()
 			dpg.render_dearpygui_frame()
 		dpg.destroy_context()
@@ -168,22 +139,22 @@ class App:
 	# Update the mechanism to the current angle
 	def update_mechanism(self):
 		# Update ground link (D)
-		d1 = self.offset
+		d1 = self._offset
 		d2 = calculate_end_point(d1, self.d*App.LINK_SCALE, self.theta4)
 		dpg.configure_item("link_d", p1=d1, p2=d2)
 		dpg.configure_item("joint_d1", center=d1)
 		dpg.configure_item("joint_d2", center=d2)
 
 		# Update input link (A)
-		a1 = self.offset
-		a2 = calculate_end_point(a1, self.a*App.LINK_SCALE, self.theta1[self.angle_index])
+		a1 = self._offset
+		a2 = calculate_end_point(a1, self.a*App.LINK_SCALE, self._theta1[self._angle_index])
 		dpg.configure_item("link_a", p1=a1, p2=a2)
 		dpg.configure_item("joint_a1", center=a1)
 		dpg.configure_item("joint_a2", center=a2)
 
 		# Update link B
 		b1 = a2
-		b2 = calculate_end_point(b1, self.b*App.LINK_SCALE, self.theta2[self.angle_index])
+		b2 = calculate_end_point(b1, self.b*App.LINK_SCALE, self._theta2[self._angle_index])
 		dpg.configure_item("link_b", p1=b1, p2=b2)
 		dpg.configure_item("joint_b1", center=b1)
 		dpg.configure_item("joint_b2", center=b2)
@@ -197,18 +168,18 @@ class App:
 
 		# Update the knife
 		kl1 = c2
-		kl2 = calculate_end_point(kl1, self.knife_offset*App.LINK_SCALE, self.theta3[self.angle_index])
+		kl2 = calculate_end_point(kl1, self.knife_offset*App.LINK_SCALE, self._theta3[self._angle_index])
 		dpg.configure_item("knife_link", p1=kl1, p2=kl2)
 
 		k1 = kl2
-		k2 = calculate_end_point(k1, 0.2*App.LINK_SCALE, self.theta3[self.angle_index])
-		k3 = calculate_end_point(k1, 0.05*App.LINK_SCALE, self.theta3[self.angle_index] - 90)
+		k2 = calculate_end_point(k1, 0.2*App.LINK_SCALE, self._theta3[self._angle_index])
+		k3 = calculate_end_point(k1, 0.05*App.LINK_SCALE, self._theta3[self._angle_index] - 90)
 		dpg.configure_item("knife", p1=k1, p2=k2, p3=k3)
 
 		# Update the velocity arrows
-		vA = self.velocityA[self.angle_index]
-		vB = self.velocityB[self.angle_index]
-		vBA = self.velocityBA[self.angle_index]
+		vA = self._velocityA[self._angle_index]
+		vB = self._velocityB[self._angle_index]
+		vBA = self._velocityBA[self._angle_index]
 
 		vA1 = a2
 		vA2 = calculate_end_point(vA1, magnitude(vA)*App.VELOCITY_SCALE, angle(vA))
@@ -263,7 +234,7 @@ class App:
 
 				# Draw ground link (D)
 				with dpg.draw_layer(tag="d"):
-					d1 = self.offset
+					d1 = self._offset
 					d2 = calculate_end_point(d1, self.d*App.LINK_SCALE, self.theta4)
 					dpg.draw_line(d1, d2, tag="link_d", color=App.GREY, thickness=App.LINK_THICKNESS)
 					dpg.draw_circle(d1, 3, tag="joint_d1", color=App.GREY, thickness=App.CIRCLE_THICKNESS)
@@ -271,8 +242,8 @@ class App:
 
 				# Draw input link (A)
 				with dpg.draw_layer(tag="a"):
-					a1 = self.offset
-					a2 = calculate_end_point(a1, self.a*App.LINK_SCALE, self.theta1[self.angle_index])
+					a1 = self._offset
+					a2 = calculate_end_point(a1, self.a*App.LINK_SCALE, self._theta1[self._angle_index])
 					dpg.draw_line(a1, a2, tag="link_a", color=App.RED, thickness=App.LINK_THICKNESS)
 					dpg.draw_circle(a1, 3, tag="joint_a1", color=App.RED, thickness=App.CIRCLE_THICKNESS)
 					dpg.draw_circle(a2, 3, tag="joint_a2", color=App.RED, thickness=App.CIRCLE_THICKNESS)
@@ -280,7 +251,7 @@ class App:
 				# Draw link B
 				with dpg.draw_layer(tag="b"):
 					b1 = a2
-					b2 = calculate_end_point(b1, self.b*App.LINK_SCALE, self.theta2[self.angle_index])
+					b2 = calculate_end_point(b1, self.b*App.LINK_SCALE, self._theta2[self._angle_index])
 					dpg.draw_line(b1, b2, tag="link_b", color=App.BLUE, thickness=App.LINK_THICKNESS)
 					dpg.draw_circle(b1, 3, tag="joint_b1", color=App.BLUE, thickness=App.CIRCLE_THICKNESS)
 					dpg.draw_circle(b2, 3, tag="joint_b2", color=App.BLUE, thickness=App.CIRCLE_THICKNESS)
@@ -296,19 +267,19 @@ class App:
 				# Draw the knife
 				with dpg.draw_layer(tag="k"):
 					kl1 = c2
-					kl2 = calculate_end_point(kl1, self.knife_offset*App.LINK_SCALE, self.theta3[self.angle_index])
+					kl2 = calculate_end_point(kl1, self.knife_offset*App.LINK_SCALE, self._theta3[self._angle_index])
 					dpg.draw_line(kl1, kl2, tag="knife_link", color=App.YELLOW, thickness=App.LINK_THICKNESS)
 
 					k1 = kl2
-					k2 = calculate_end_point(k1, 0.2*App.LINK_SCALE, self.theta3[self.angle_index])
-					k3 = calculate_end_point(k1, 0.05*App.LINK_SCALE, self.theta3[self.angle_index] - 90)
+					k2 = calculate_end_point(k1, 0.2*App.LINK_SCALE, self._theta3[self._angle_index])
+					k3 = calculate_end_point(k1, 0.05*App.LINK_SCALE, self._theta3[self._angle_index] - 90)
 					dpg.draw_triangle(k1, k2, k3, tag="knife", color=App.BROWN, fill=App.BROWN)
 
 				# Draw the velocity arrows
 				with dpg.draw_layer(tag="velocity_arrows"):
-					vA = self.velocityA[self.angle_index]
-					vB = self.velocityB[self.angle_index]
-					vBA = self.velocityBA[self.angle_index]
+					vA = self._velocityA[self._angle_index]
+					vB = self._velocityB[self._angle_index]
+					vBA = self._velocityBA[self._angle_index]
 
 					vA1 = a2
 					vA2 = calculate_end_point(vA1, magnitude(vA)*App.VELOCITY_SCALE, angle(vA))
@@ -366,8 +337,8 @@ class App:
 					)
 
 		# Save the mechanism drawing window
-		self.mechanism_drawing = mechanism_drawing
-		self.mechanism_canvas = mechanism_canvas
+		self._mechanism_drawing = mechanism_drawing
+		self._mechanism_canvas = mechanism_canvas
 
 	# Create arcs showing movement of crank and rocker links
 	# def create_paths(a, c, theta1, theta3):
@@ -401,7 +372,7 @@ class App:
 			dpg.add_button(label="Pause" if self.running else "Resume", tag="toggle_running", callback=self.toggle_running)
 
 		# Save the mechanism settings window
-		self.mechanism_settings = mechanism_settings
+		self._mechanism_settings = mechanism_settings
 
 	# Create position plot window
 	def create_position_plot(self):
@@ -420,11 +391,11 @@ class App:
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
 				dpg.add_plot_axis(dpg.mvYAxis, label="Output Angle (degree)", tag="position_y_axis")
-				dpg.add_line_series(self.theta1, self.theta2, label="Theta 2", parent="position_y_axis")
-				dpg.add_line_series(self.theta1, self.theta3, label="Theta 3", parent="position_y_axis")
+				dpg.add_line_series(self._theta1, self._theta2, label="Theta 2", parent="position_y_axis")
+				dpg.add_line_series(self._theta1, self._theta3, label="Theta 3", parent="position_y_axis")
 
 		# Save the position plot window
-		self.position_analysis = position_analysis
+		self._position_analysis = position_analysis
 
 	# Create velocity plot window
 	def create_velocity_plot(self):
@@ -438,21 +409,21 @@ class App:
 			no_move=True,
 			no_collapse=True,
 		) as velocity_analysis:
-			vA = [ magnitude(v) for v in self.velocityA ]
-			vB = [ magnitude(v) for v in self.velocityB ]
-			vBA = [ magnitude(v) for v in self.velocityBA ]
+			vA = [ magnitude(v) for v in self._velocityA ]
+			vB = [ magnitude(v) for v in self._velocityB ]
+			vBA = [ magnitude(v) for v in self._velocityBA ]
 
 			with dpg.plot():
 				dpg.add_plot_legend()
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
 				dpg.add_plot_axis(dpg.mvYAxis, label="Output Velocity (m/s)", tag="velocity_y_axis")
-				dpg.add_line_series(self.theta1, vA, label="Velocity A", parent="velocity_y_axis")
-				dpg.add_line_series(self.theta1, vB, label="Velocity B", parent="velocity_y_axis")
-				dpg.add_line_series(self.theta1, vBA, label="Velocity BA", parent="velocity_y_axis")
+				dpg.add_line_series(self._theta1, vA, label="Velocity A", parent="velocity_y_axis")
+				dpg.add_line_series(self._theta1, vB, label="Velocity B", parent="velocity_y_axis")
+				dpg.add_line_series(self._theta1, vBA, label="Velocity BA", parent="velocity_y_axis")
 
 		# Save the velocity plot window
-		self.velocity_analysis = velocity_analysis
+		self._velocity_analysis = velocity_analysis
 
 	# Create acceleration plot window
 	def create_acceleration_plot(self):
@@ -466,20 +437,49 @@ class App:
 			no_move=True,
 			no_collapse=True,
 		) as acceleration_analysis:
-			aA = [ magnitude(a) for a in self.accelerationA ]
-			aB = [ magnitude(a) for a in self.accelerationB ]
-			aBA = [ magnitude(a) for a in self.accelerationBA ]
+			aA = [ magnitude(a) for a in self._accelerationA ]
+			aB = [ magnitude(a) for a in self._accelerationB ]
+			aBA = [ magnitude(a) for a in self._accelerationBA ]
 
 			with dpg.plot():
 				dpg.add_plot_legend()
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
 				dpg.add_plot_axis(dpg.mvYAxis, label="Output Acceleration (m/s^2)", tag="acceleration_y_axis")
-				dpg.add_line_series(self.theta1, aA, label="Acceleration A", parent="acceleration_y_axis")
-				dpg.add_line_series(self.theta1, aB, label="Acceleration B", parent="acceleration_y_axis")
-				dpg.add_line_series(self.theta1, aBA, label="Acceleration BA", parent="acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aA, label="Acceleration A", parent="acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aB, label="Acceleration B", parent="acceleration_y_axis")
+				dpg.add_line_series(self._theta1, aBA, label="Acceleration BA", parent="acceleration_y_axis")
 
 		# Save the acceleration plot window
-		self.acceleration_analysis = acceleration_analysis
+		self._acceleration_analysis = acceleration_analysis
+
+	# Windows
+	_mechanism_settings = None
+	_mechanism_drawing = None
+	_mechanism_canvas = None
+	_position_analysis = None
+	_velocity_analysis = None
+	_acceleration_analysis = None
+
+	# Analysis Settings
+	_offset = (WINDOW_WIDTH * 0.3, (WINDOW_HEIGHT - TAB_HEIGHT) * 0.75)
+	_angle_index = 0
+
+	# Analysis Data
+	_theta1 = []
+	_theta2 = []
+	_theta3 = []
+	_omega2 = []
+	_omega3 = []
+	_omega4 = []
+	_velocityA = (0, 0)
+	_velocityB = (0, 0)
+	_velocityBA = (0, 0)
+	_alpha2 = []
+	_alpha3 = []
+	_alpha4 = []
+	_accelerationA = (0, 0)
+	_accelerationB = (0, 0)
+	_accelerationBA = (0, 0)
 
 App().run()
