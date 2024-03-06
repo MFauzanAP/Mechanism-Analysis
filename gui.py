@@ -167,6 +167,22 @@ class App:
 			dpg.render_dearpygui_frame()
 		dpg.destroy_context()
 
+	# Handler for the update and analyze button
+	def handle_update_and_analyze(self):
+		self.a = dpg.get_value("a_input")
+		self.b = dpg.get_value("b_input")
+		self.c = dpg.get_value("c_input")
+		self.d = dpg.get_value("d_input")
+		self.theta4 = dpg.get_value("theta4_input")
+		self.omega1 = dpg.get_value("omega1_input")
+		self.alpha1 = dpg.get_value("alpha1_input")
+		self.current_angle = dpg.get_value("theta1_input")
+		self.resolution = dpg.get_value("resolution_input")
+		self.position = str.lower(dpg.get_value("pos_input"))
+		self.analyze_mechanism()
+		self.update_mechanism()
+		self.update_plots()
+
 	# Toggles the running state of the app
 	def handle_toggle_running(self):
 		self.running = not self.running
@@ -465,19 +481,19 @@ class App:
 			no_collapse=True,
 		):
 			dpg.add_text("Link Lengths (m)")
-			dpg.add_slider_float(label="Input Link A", default_value=self.a, max_value=1)
-			dpg.add_slider_float(label="B", default_value=self.b, max_value=1)
-			dpg.add_slider_float(label="C", default_value=self.c, max_value=1)
-			dpg.add_slider_float(label="Ground Link D", default_value=self.d, max_value=1)
+			dpg.add_slider_float(label="Input Link A", tag="a_input", default_value=self.a, max_value=1)
+			dpg.add_slider_float(label="B", tag="b_input", default_value=self.b, max_value=1)
+			dpg.add_slider_float(label="C", tag="c_input", default_value=self.c, max_value=1)
+			dpg.add_slider_float(label="Ground Link D", tag="d_input", default_value=self.d, max_value=1)
 			dpg.add_text("Kinematic Input")
-			dpg.add_slider_float(label="Ground Angle (deg)", default_value=self.theta4, min_value=0, max_value=360)
-			dpg.add_slider_float(label="Input Speed (rpm)", default_value=self.omega1, min_value=-15, max_value=15)
-			dpg.add_slider_float(label="Motor Acc. (deg/s^2)", default_value=self.alpha1, min_value=0, max_value=5)
+			dpg.add_slider_float(label="Ground Angle (deg)", tag="theta4_input", default_value=self.theta4, min_value=0, max_value=360)
+			dpg.add_slider_float(label="Input Speed (rpm)", tag="omega1_input", default_value=self.omega1, min_value=-15, max_value=15)
+			dpg.add_slider_float(label="Motor Acc. (deg/s^2)", tag="alpha1_input", default_value=self.alpha1, min_value=0, max_value=5)
 			dpg.add_text("Analysis Settings")
-			dpg.add_slider_float(label="Input Angle", default_value=self.current_angle, min_value=0, max_value=360)
-			dpg.add_slider_int(label="Resolution", default_value=App.resolution, max_value=500)
-			dpg.add_radio_button(["Open", "Crossed"], label="Position", default_value=0)
-			dpg.add_button(label="Update and Analyze")
+			dpg.add_slider_float(label="Input Angle", tag="theta1_input", default_value=self.current_angle, min_value=0, max_value=360)
+			dpg.add_slider_int(label="Resolution", tag="resolution_input", default_value=App.resolution, max_value=500)
+			dpg.add_radio_button(["Open", "Crossed"], tag="pos_input", label="Position", default_value=str.capitalize(self.position))
+			dpg.add_button(label="Update and Analyze", callback=self.handle_update_and_analyze)
 			dpg.add_button(label="Pause" if self.running else "Resume", tag="toggle_running", callback=self.handle_toggle_running)
 
 	# Create position plot window

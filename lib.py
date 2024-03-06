@@ -105,6 +105,7 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 
 	# Convert to appropriate units
 	theta1 = math.radians(theta1)
+	theta4 = math.radians(theta4)
 	omega1 = omega1 * 0.10472
 	alpha1 = math.radians(alpha1)
 
