@@ -31,7 +31,7 @@ The program is still under development and will be updated with new features and
 - [x] Ability to change the link lengths, ground angle, input angle, speed, and mechanism position (open or crossed)
 - [ ] Path tracing of rocker linkage
 - [x] Show current angles, velocities, and accelerations in each of their plots 
-- [ ] Toggle between velocity, acceleration, and force arrows
+- [x] Toggle between velocity, acceleration, and force arrows
 
 ### Extra
 - [x] Refactor program to calculate joint positions inside lib.py, then use these to calculate min and max bounding boxes and plots for dimension changes

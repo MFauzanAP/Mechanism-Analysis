@@ -17,3 +17,7 @@ def rotate(vector, angle):
 	x = vector[0] * math.cos(math.radians(-angle)) - vector[1] * math.sin(math.radians(-angle))
 	y = vector[0] * math.sin(math.radians(-angle)) + vector[1] * math.cos(math.radians(-angle))
 	return (x, y)
+
+# Gets the midway point between two coordinates
+def midpoint(a, b):
+	return ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
