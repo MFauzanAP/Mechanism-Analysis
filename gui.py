@@ -44,11 +44,11 @@ class App:
 	alpha1 = 0				# Motor Acceleration (deg/s^2)
 
 	# Analysis Settings
-	current_angle = 30		# Current angle of the input link
+	current_angle = 338		# Current angle of the input link
 	resolution = 360
 	position = "crossed"
 	arrow = "velocity"
-	running = True
+	running = False
 
 	# Constructor for the app, sets up the PyGUI context and viewport
 	def __init__(self):
@@ -67,6 +67,7 @@ class App:
 		self.create_velocity_plot()
 		self.create_acceleration_plot()
 		self.create_performance_plot()
+		self.create_dynamic_plot()
 
 	# Uses the updated mechanism properties to update the computed values
 	def analyze_mechanism(self):
@@ -101,6 +102,15 @@ class App:
 			cgAccelerationA,
 			cgAccelerationB,
 			cgAccelerationBA,
+			f41x,
+			f41y,
+			f21x,
+			f21y,
+			f32x,
+			f32y,
+			f43x,
+			f43y,
+			torque,
 		) = analyze_mechanism(
 			a=self.a,
 			b=self.b,
@@ -156,6 +166,15 @@ class App:
 		self._cgAccelerationA = cgAccelerationA		# m/s^2
 		self._cgAccelerationB = cgAccelerationB		# m/s^2
 		self._cgAccelerationBA = cgAccelerationBA	# m/s^2
+		self._f41x = f41x							# N
+		self._f41y = f41y							# N
+		self._f21x = f21x							# N
+		self._f21y = f21y							# N
+		self._f32x = f32x							# N
+		self._f32y = f32y							# N
+		self._f43x = f43x							# N
+		self._f43y = f43y							# N
+		self._torque = torque						# Nm
 		self._transmission_angle = transmission_angle
 		self._velocity_ratio = velocity_ratio
 		self._mechanical_advantage = mechanical_advantage
@@ -933,6 +952,15 @@ class App:
 	_cgAccelerationA = (0, 0)
 	_cgAccelerationB = (0, 0)
 	_cgAccelerationBA = (0, 0)
+	_f41x = []
+	_f41y = []
+	_f21x = []
+	_f21y = []
+	_f32x = []
+	_f32y = []
+	_f43x = []
+	_f43y = []
+	_torque = []
 	_transmission_angle = []
 	_velocity_ratio = []
 	_mechanical_advantage = []

@@ -1,5 +1,6 @@
 import math
-from numpy import linspace
+from numpy import linspace, array, matrix, transpose
+from numpy.linalg import inv
 from helpers import calculate_end_point
 
 # Calculate theta 2 and 3 from the given input angle
@@ -105,6 +106,85 @@ def calculate_performance(a, b, c, d, theta1, omega1, omega3):
 	mechanical_advantage = (omega1 * a) / (omega3 * c)
 	return (transmission_angle, velocity_ratio, mechanical_advantage)
 
+# Calculate the forces at each joint and at the knife edge, as well as the driving torque required
+def calculate_dynamic(
+	a,
+	b,
+	c,
+	knife_offset,
+	theta1,
+	theta2,
+	theta3,
+	alpha1,
+	alpha2,
+	alpha3,
+	cgAccelerationA,
+	cgAccelerationB,
+	cgAccelerationBA,
+):
+	# Construct known-values matrix
+	m1 = 3.525
+	m2 = 5.05
+	m3 = 5.05
+	i1 = 0.057
+	i2 = 0.011
+	i3 = 0.455
+	f_cut = 0
+	known_matrix = transpose(matrix(array([
+		m1*cgAccelerationA[0],
+		m1*cgAccelerationA[1],
+		i1*alpha1,
+		m2*cgAccelerationBA[0],
+		m2*cgAccelerationBA[1],
+		i2*alpha2,
+		m3*cgAccelerationB[0] + f_cut,
+		m3*cgAccelerationB[1],
+		i3*alpha3 - f_cut*math.sin(theta3)*((c+knife_offset)/2),
+	])))
+
+	# Construct coefficient matrix
+	r41y = -(a/2)*math.sin(theta1)
+	r41x = -(a/2)*math.cos(theta1)
+	r21y = (a/2)*math.sin(theta1)
+	r21x = (a/2)*math.cos(theta1)
+	r12y = -(b/2)*math.sin(theta2)
+	r12x = (b/2)*math.cos(theta2)
+	r32y = -(b/2)*math.sin(theta2)
+	r32x = (b/2)*math.cos(theta2)
+	r23y = math.sin(theta3)*(1-knife_offset)*((c+knife_offset)/2)
+	r23x = math.cos(theta3)*(1-knife_offset)*((c+knife_offset)/2)
+	r43y = math.sin(theta3)*((c+knife_offset)/2)
+	r43x = math.cos(theta3)*((c+knife_offset)/2)
+	coefficient_matrix = matrix(array([
+		[1,0,1, 0,0,0, 0,0,0],
+		[0,1,0, 1,0,0, 0,0,0],
+		[r41y,r41x,r21y, r21x,0,0, 0,0,1],
+
+		[0,0,-1, 0,1,0, 0,0,0],
+		[0,0,0, -1,0,1, 0,0,0],
+		[0,0,r12y, r12x,r32y,r32x, 0,0,0],
+
+		[0,0,0, 0,-1,0, 1,0,0],
+		[0,0,0, 0,0,-1, 0,1,0],
+		[0,0,0, 0,r23y,r23x, r43y,r43x,0],
+	]))
+
+	# Calculate the forces and torques
+	forces_and_torques = inv(coefficient_matrix) * known_matrix
+	
+	# Return results
+	return (
+		forces_and_torques[0,0],
+		forces_and_torques[1,0],
+		forces_and_torques[2,0],
+		forces_and_torques[3,0],
+		forces_and_torques[4,0],
+		forces_and_torques[5,0],
+		forces_and_torques[6,0],
+		forces_and_torques[7,0],
+		forces_and_torques[8,0],
+	)
+
 # Calculate and aggregate position, velocity, and acceleration analysis results for the given input angle
 def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, theta1, theta4, omega1, alpha1):
 
@@ -187,6 +267,33 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 		omega3=omega3,
 	)
 
+	# Solve for dynamic forces and torque
+	(
+		f41x,
+		f41y,
+		f21x,
+		f21y,
+		f32x,
+		f32y,
+		f43x,
+		f43y,
+		torque,
+	) = calculate_dynamic(
+		a=a,
+		b=b,
+		c=c,
+		knife_offset=knife_offset,
+		theta1=theta1,
+		theta2=theta2,
+		theta3=theta3,
+		alpha1=alpha1,
+		alpha2=alpha2,
+		alpha3=alpha3,
+		cgAccelerationA=cgAccelerationA,
+		cgAccelerationB=cgAccelerationB,
+		cgAccelerationBA=cgAccelerationBA,
+	)
+
 	# Return the calculated angles
 	return (
 		theta1,
@@ -218,6 +325,15 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 		cgAccelerationA,
 		cgAccelerationB,
 		cgAccelerationBA,
+		f41x,
+		f41y,
+		f21x,
+		f21y,
+		f32x,
+		f32y,
+		f43x,
+		f43y,
+		torque,
 	)
 
 # Loops through all possible angles, calculates the results, and aggregates them into arrays
@@ -225,33 +341,33 @@ def analyze_mechanism(a, b, c, d, knife_offset, theta4, omega1, alpha1, offset=0
 
 	# Output arrays
 	output = []
-	NUM_RESULTS = 29
+	NUM_RESULTS = 38
 	NUM_SCALAR_RESULTS = 8
 
-	# For each data returned from the analysis
-	for i in range(NUM_RESULTS):
+	# Prepare output array
+	for i in range(NUM_RESULTS): output.append([])
 
-		# Append an empty array
-		output.append([])
+	# Loop through all possible angles
+	for theta1 in linspace(1, 360, num=resolution):
 
-		# Loop through all possible angles
-		for theta1 in linspace(1, 360, num=resolution):
+		# Calculate the results
+		results = calculate_results(
+			offset=offset,
+			link_scale=link_scale,
+			a=a,
+			b=b,
+			c=c,
+			d=d,
+			knife_offset=knife_offset,
+			position=position,
+			theta1=theta1,
+			theta4=theta4,
+			omega1=omega1,
+			alpha1=alpha1,
+		)
 
-			# Calculate the results
-			results = calculate_results(
-				offset=offset,
-				link_scale=link_scale,
-				a=a,
-				b=b,
-				c=c,
-				d=d,
-				knife_offset=knife_offset,
-				position=position,
-				theta1=theta1,
-				theta4=theta4,
-				omega1=omega1,
-				alpha1=alpha1,
-			)
+		# For each data returned from the analysis
+		for i in range(NUM_RESULTS):
 
 			# Convert units if specified
 			if convert and i < NUM_SCALAR_RESULTS: output[i].append(math.degrees(results[i]))
