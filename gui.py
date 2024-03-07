@@ -17,6 +17,7 @@ class App:
 	BLUE = (0, 0, 255, 255)
 	BLUE_50 = (58, 137, 222, 255)
 	BROWN = (139, 69, 19, 255)
+	BROWN_50 = (108, 54, 15, 255)
 	GREEN = (0, 255, 0, 255)
 	YELLOW = (255, 255, 0, 255)
 	YELLOW_50 = (138, 108, 14, 255)
@@ -47,7 +48,7 @@ class App:
 	current_angle = 338		# Current angle of the input link
 	resolution = 360
 	position = "crossed"
-	arrow = "velocity"
+	arrow = "force"
 	running = False
 
 	# Constructor for the app, sets up the PyGUI context and viewport
@@ -57,7 +58,7 @@ class App:
 
 		# Setup the app
 		dpg.create_context()
-		dpg.create_viewport(title="Mechanism Analysis and Simulation", width=App.WINDOW_WIDTH, height=App.WINDOW_HEIGHT, )
+		dpg.create_viewport(title="Mechanism Analysis and Simulation", width=App.WINDOW_WIDTH, height=App.WINDOW_HEIGHT)
 		dpg.setup_dearpygui()
 		
 		# Create the windows
@@ -132,6 +133,8 @@ class App:
 			max_mag = max([magnitude(v) for v in velocityA] + [magnitude(v) for v in velocityB] + [magnitude(v) for v in velocityBA])
 		elif self.arrow == "acceleration":
 			max_mag = max([magnitude(v) for v in cgAccelerationA] + [magnitude(v) for v in cgAccelerationB] + [magnitude(v) for v in cgAccelerationBA])
+		elif self.arrow == "force":
+			max_mag = max([magnitude(v) for v in (f41x, f41y)] + [magnitude(v) for v in (f21x, f21y)] + [magnitude(v) for v in (f32x, f32y)] + [magnitude(v) for v in (f43x, f43y)])
 
 		# Calculate new scale
 		arrow_scale = App.ARROW_SCALE / max_mag
@@ -278,6 +281,8 @@ class App:
 		arrow_b2 = 0
 		arrow_c1 = 0
 		arrow_c2 = 0
+		arrow_d1 = 0
+		arrow_d2 = 0
 
 		if self.arrow == "velocity":
 			vA = self._velocityA[self._angle_index]
@@ -303,9 +308,25 @@ class App:
 			arrow_c1 = midpoint(c1, c2)
 			arrow_c2 = calculate_end_point(arrow_c1, magnitude(aB)*self._arrow_scale, angle(aB))
 
+		elif self.arrow == "force":
+			f41 = (self._f41x[self._angle_index], self._f41y[self._angle_index])
+			f21 = (self._f21x[self._angle_index], self._f21y[self._angle_index])
+			f32 = (self._f32x[self._angle_index], self._f32y[self._angle_index])
+			f43 = (self._f43x[self._angle_index], self._f43y[self._angle_index])
+
+			arrow_a1 = a1
+			arrow_a2 = calculate_end_point(arrow_a1, magnitude(f41)*self._arrow_scale, angle(f41))
+			arrow_b1 = b1
+			arrow_b2 = calculate_end_point(arrow_b1, magnitude(f21)*self._arrow_scale, angle(f21))
+			arrow_c1 = c1
+			arrow_c2 = calculate_end_point(arrow_c1, magnitude(f32)*self._arrow_scale, angle(f32))
+			arrow_d1 = d1
+			arrow_d2 = calculate_end_point(arrow_d1, magnitude(f43)*self._arrow_scale, angle(f43))
+
 		dpg.configure_item("arrow_a", p1=arrow_a2, p2=arrow_a1)
 		dpg.configure_item("arrow_b", p1=arrow_b2, p2=arrow_b1)
 		dpg.configure_item("arrow_c", p1=arrow_c2, p2=arrow_c1)
+		if arrow_d1 != arrow_d2: dpg.configure_item("arrow_d", p1=arrow_d2, p2=arrow_d1)
 
 		# Update the bounding box
 		x_coords = [a1[0], a2[0], b1[0], b2[0], c1[0], c2[0], d1[0], d2[0], kl1[0], kl2[0]]
@@ -496,6 +517,8 @@ class App:
 					arrow_b2 = 0
 					arrow_c1 = 0
 					arrow_c2 = 0
+					arrow_d1 = 0
+					arrow_d2 = 0
 
 					if self.arrow == "velocity":
 						vA = self._velocityA[self._angle_index]
@@ -519,10 +542,25 @@ class App:
 						arrow_b2 = calculate_end_point(arrow_b1, magnitude(aBA)*self._arrow_scale, angle(aBA))
 						arrow_c1 = midpoint(c1, c2)
 						arrow_c2 = calculate_end_point(arrow_c1, magnitude(aB)*self._arrow_scale, angle(aB))
+					elif self.arrow == "force":
+						f41 = (self._f41x[self._angle_index], self._f41y[self._angle_index])
+						f21 = (self._f21x[self._angle_index], self._f21y[self._angle_index])
+						f32 = (self._f32x[self._angle_index], self._f32y[self._angle_index])
+						f43 = (self._f43x[self._angle_index], self._f43y[self._angle_index])
+
+						arrow_a1 = a1
+						arrow_a2 = calculate_end_point(arrow_a1, magnitude(f41)*self._arrow_scale, angle(f41))
+						arrow_b1 = b1
+						arrow_b2 = calculate_end_point(arrow_b1, magnitude(f21)*self._arrow_scale, angle(f21))
+						arrow_c1 = c1
+						arrow_c2 = calculate_end_point(arrow_c1, magnitude(f32)*self._arrow_scale, angle(f32))
+						arrow_d1 = d1
+						arrow_d2 = calculate_end_point(arrow_d1, magnitude(f43)*self._arrow_scale, angle(f43))
 
 					dpg.draw_arrow(arrow_a2, arrow_a1, tag="arrow_a", color=App.RED_50, thickness=App.ARROW_THICKNESS)
 					dpg.draw_arrow(arrow_b2, arrow_b1, tag="arrow_b", color=App.BLUE_50, thickness=App.ARROW_THICKNESS)
 					dpg.draw_arrow(arrow_c2, arrow_c1, tag="arrow_c", color=App.YELLOW_50, thickness=App.ARROW_THICKNESS)
+					if arrow_d1 != arrow_d2: dpg.draw_arrow(arrow_d2, arrow_d1, tag="arrow_d", color=App.BROWN_50, thickness=App.ARROW_THICKNESS)
 
 				# Draw the bounding box
 				with dpg.draw_layer(tag="bounding_box"):
@@ -913,6 +951,38 @@ class App:
 				dpg.add_plot_axis(dpg.mvYAxis, label="Output Ratio", tag="mechanical_advantange_y_axis")
 				dpg.add_line_series(self._theta1, self._mechanical_advantage, label="Mechanical Advantage", parent="mechanical_advantange_y_axis")
 				dpg.add_drag_line(label="Current Angle", tag="mechanical_advantage_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+	# Create force and torque plots
+	def create_dynamic_plot(self):
+		dpg.add_collapsing_header(label="Dynamic Analysis", tag="dynamic_analysis", parent="inspector")
+		with dpg.group(parent="dynamic_analysis"):
+
+			f41x = round(self._f41x[self._angle_index], 2)
+			f41y = round(self._f41y[self._angle_index], 2)
+			f21x = round(self._f21x[self._angle_index], 2)
+			f21y = round(self._f21y[self._angle_index], 2)
+			f32x = round(self._f32x[self._angle_index], 2)
+			f32y = round(self._f32y[self._angle_index], 2)
+			f43x = round(self._f43x[self._angle_index], 2)
+			f43y = round(self._f43y[self._angle_index], 2)
+
+			dpg.add_text("Input Link A")
+			dpg.add_text(f"Force from ground in X: {f41x} N")
+			dpg.add_text(f"Force from ground in Y: {f41y} N")
+			dpg.add_text(f"Magnitude of force from ground: {round(magnitude((f41x, f41y)), 2)} N")
+			dpg.add_text(f"Range of force from ground in X: {round(min(self._f41x), 2)} to {round(max(self._f41x), 2)} N")
+			dpg.add_text(f"Range of force from ground in Y: {round(min(self._f41y), 2)} to {round(max(self._f41y), 2)} N")
+			dpg.add_text(f"Range of magnitude of force from ground: {round(min([ magnitude(f) for f in zip(self._f41x, self._f41y) ]), 2)} to {round(max([ magnitude(f) for f in zip(self._f41x, self._f41y) ]), 2)} N")
+
+			with dpg.plot():
+				dpg.add_plot_legend()
+				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+				dpg.set_axis_limits(dpg.last_item(), 0, 360)
+				dpg.add_plot_axis(dpg.mvYAxis, label="Output Force on Link A (N)", tag="force_a_y_axis")
+				dpg.add_line_series(self._theta1, self._f41x, label="Ground X", parent="force_a_y_axis")
+				dpg.add_line_series(self._theta1, self._f41y, label="Ground Y", parent="force_a_y_axis")
+				dpg.add_line_series(self._theta1, [ magnitude(f) for f in zip(self._f41x, self._f41y) ], label="Ground Magnitude", parent="force_a_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="force_a_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
 	# Analysis Settings
 	_arrow_scale = ARROW_SCALE

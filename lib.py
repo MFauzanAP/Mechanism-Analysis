@@ -123,13 +123,18 @@ def calculate_dynamic(
 	cgAccelerationBA,
 ):
 	# Construct known-values matrix
-	m1 = 3.525
+	m1 = 5.525
 	m2 = 5.05
 	m3 = 5.05
-	i1 = 0.057
-	i2 = 0.011
-	i3 = 0.455
-	f_cut = 0
+	i1 = 1.557
+	i2 = 1.511
+	i3 = 2.455
+	force_start = 338
+	force_end = 358
+	force_mid = (force_start + force_end) / 2
+	force_amp = (force_end - force_start) / 2
+	force_max = 10
+	f_cut = (abs(math.degrees(theta1) - force_mid) - force_amp) * force_max / force_amp if math.degrees(theta1) > force_start and math.degrees(theta1) < force_end else 0
 	known_matrix = transpose(matrix(array([
 		m1*cgAccelerationA[0],
 		m1*cgAccelerationA[1],
@@ -145,28 +150,28 @@ def calculate_dynamic(
 	# Construct coefficient matrix
 	r41y = -(a/2)*math.sin(theta1)
 	r41x = -(a/2)*math.cos(theta1)
-	r21y = (a/2)*math.sin(theta1)
-	r21x = (a/2)*math.cos(theta1)
+	r21y = -r41y
+	r21x = -r41x
 	r12y = -(b/2)*math.sin(theta2)
-	r12x = (b/2)*math.cos(theta2)
-	r32y = -(b/2)*math.sin(theta2)
-	r32x = (b/2)*math.cos(theta2)
-	r23y = math.sin(theta3)*(1-knife_offset)*((c+knife_offset)/2)
-	r23x = math.cos(theta3)*(1-knife_offset)*((c+knife_offset)/2)
-	r43y = math.sin(theta3)*((c+knife_offset)/2)
-	r43x = math.cos(theta3)*((c+knife_offset)/2)
+	r12x = -(b/2)*math.cos(theta2)
+	r32y = -r12y
+	r32x = -r12x
+	r23y = ((c+knife_offset)/2)*(1-knife_offset)*math.sin(theta3)
+	r23x = ((c+knife_offset)/2)*(1-knife_offset)*math.cos(theta3)
+	r43y = -((c+knife_offset)/2)*math.sin(theta3)
+	r43x = -((c+knife_offset)/2)*math.cos(theta3)
 	coefficient_matrix = matrix(array([
 		[1,0,1, 0,0,0, 0,0,0],
 		[0,1,0, 1,0,0, 0,0,0],
-		[r41y,r41x,r21y, r21x,0,0, 0,0,1],
+		[-r41y,r41x,-r21y, r21x,0,0, 0,0,1],
 
 		[0,0,-1, 0,1,0, 0,0,0],
 		[0,0,0, -1,0,1, 0,0,0],
-		[0,0,r12y, r12x,r32y,r32x, 0,0,0],
+		[0,0,-r12y, -r12x,-r32y,r32x, 0,0,0],
 
 		[0,0,0, 0,-1,0, 1,0,0],
 		[0,0,0, 0,0,-1, 0,1,0],
-		[0,0,0, 0,r23y,r23x, r43y,r43x,0],
+		[0,0,0, 0,r23y,-r23x, -r43y,r43x,0],
 	]))
 
 	# Calculate the forces and torques
