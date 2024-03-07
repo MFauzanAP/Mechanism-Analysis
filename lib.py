@@ -133,7 +133,7 @@ def calculate_dynamic(
 	force_end = 358
 	force_mid = (force_start + force_end) / 2
 	force_amp = (force_end - force_start) / 2
-	force_max = 10
+	force_max = 20
 	f_cut = (abs(math.degrees(theta1) - force_mid) - force_amp) * force_max / force_amp if math.degrees(theta1) > force_start and math.degrees(theta1) < force_end else 0
 	known_matrix = transpose(matrix(array([
 		m1*cgAccelerationA[0],
@@ -183,8 +183,12 @@ def calculate_dynamic(
 		forces_and_torques[1,0],
 		forces_and_torques[2,0],
 		forces_and_torques[3,0],
+		-1*forces_and_torques[2,0],
+		-1*forces_and_torques[3,0],
 		forces_and_torques[4,0],
 		forces_and_torques[5,0],
+		-1*forces_and_torques[4,0],
+		-1*forces_and_torques[5,0],
 		forces_and_torques[6,0],
 		forces_and_torques[7,0],
 		forces_and_torques[8,0],
@@ -278,8 +282,12 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 		f41y,
 		f21x,
 		f21y,
+		f12x,
+		f12y,
 		f32x,
 		f32y,
+		f23x,
+		f23y,
 		f43x,
 		f43y,
 		torque,
@@ -334,8 +342,12 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 		f41y,
 		f21x,
 		f21y,
+		f12x,
+		f12y,
 		f32x,
 		f32y,
+		f23x,
+		f23y,
 		f43x,
 		f43y,
 		torque,
@@ -346,7 +358,7 @@ def analyze_mechanism(a, b, c, d, knife_offset, theta4, omega1, alpha1, offset=0
 
 	# Output arrays
 	output = []
-	NUM_RESULTS = 38
+	NUM_RESULTS = 42
 	NUM_SCALAR_RESULTS = 8
 
 	# Prepare output array

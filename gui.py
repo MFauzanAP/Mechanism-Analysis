@@ -107,8 +107,12 @@ class App:
 			f41y,
 			f21x,
 			f21y,
+			f12x,
+			f12y,
 			f32x,
 			f32y,
+			f23x,
+			f23y,
 			f43x,
 			f43y,
 			torque,
@@ -134,7 +138,14 @@ class App:
 		elif self.arrow == "acceleration":
 			max_mag = max([magnitude(v) for v in cgAccelerationA] + [magnitude(v) for v in cgAccelerationB] + [magnitude(v) for v in cgAccelerationBA])
 		elif self.arrow == "force":
-			max_mag = max([magnitude(v) for v in (f41x, f41y)] + [magnitude(v) for v in (f21x, f21y)] + [magnitude(v) for v in (f32x, f32y)] + [magnitude(v) for v in (f43x, f43y)])
+			max_mag = max(
+				[magnitude(v) for v in zip(f41x, f41y)]
+				+ [magnitude(v) for v in zip(f21x, f21y)]
+				+ [magnitude(v) for v in zip(f12x, f12y)]
+				+ [magnitude(v) for v in zip(f32x, f32y)]
+				+ [magnitude(v) for v in zip(f23x, f23y)]
+				+ [magnitude(v) for v in zip(f43x, f43y)]
+			)
 
 		# Calculate new scale
 		arrow_scale = App.ARROW_SCALE / max_mag
@@ -173,8 +184,12 @@ class App:
 		self._f41y = f41y							# N
 		self._f21x = f21x							# N
 		self._f21y = f21y							# N
+		self._f12x = f12x							# N
+		self._f12y = f12y							# N
 		self._f32x = f32x							# N
 		self._f32y = f32y							# N
+		self._f23x = f23x							# N
+		self._f23y = f23y							# N
 		self._f43x = f43x							# N
 		self._f43y = f43y							# N
 		self._torque = torque						# Nm
@@ -434,6 +449,44 @@ class App:
 		dpg.configure_item("velocity_ratio_value", default_value=f"Velocity Ratio: {velocity_ratio}")
 		dpg.configure_item("mechanical_advantage_value", default_value=f"Mechanical Advantage: {mechanical_advantage}")
 
+		# Update dynamic values
+		f41x = round(self._f41x[self._angle_index], 2)
+		f41y = round(self._f41y[self._angle_index], 2)
+		f21x = round(self._f21x[self._angle_index], 2)
+		f21y = round(self._f21y[self._angle_index], 2)
+		f12x = round(self._f12x[self._angle_index], 2)
+		f12y = round(self._f12y[self._angle_index], 2)
+		f32x = round(self._f32x[self._angle_index], 2)
+		f32y = round(self._f32y[self._angle_index], 2)
+		f23x = round(self._f23x[self._angle_index], 2)
+		f23y = round(self._f23y[self._angle_index], 2)
+		f43x = round(self._f43x[self._angle_index], 2)
+		f43y = round(self._f43y[self._angle_index], 2)
+		torque = round(self._torque[self._angle_index], 2)
+
+		dpg.configure_item("f41x_value", default_value=f"Force from ground in X: {f41x} N")
+		dpg.configure_item("f41y_value", default_value=f"Force from ground in Y: {f41y} N")
+		dpg.configure_item("f41_mag", default_value=f"Magnitude of force from ground: {round(magnitude((f41x, f41y)), 2)} N")
+		dpg.configure_item("f21x_value", default_value=f"Force from link B in X: {f21x} N")
+		dpg.configure_item("f21y_value", default_value=f"Force from link B in Y: {f21y} N")
+		dpg.configure_item("f21_mag", default_value=f"Magnitude of force from link B: {round(magnitude((f21x, f21y)), 2)} N")
+
+		dpg.configure_item("f12x_value", default_value=f"Force from input link A in X: {f12x} N")
+		dpg.configure_item("f12y_value", default_value=f"Force from input link A in Y: {f12y} N")
+		dpg.configure_item("f12_mag", default_value=f"Magnitude of force from input link A: {round(magnitude((f12x, f12y)), 2)} N")
+		dpg.configure_item("f32x_value", default_value=f"Force from link C in X: {f32x} N")
+		dpg.configure_item("f32y_value", default_value=f"Force from link C in Y: {f32y} N")
+		dpg.configure_item("f32_mag", default_value=f"Magnitude of force from link C: {round(magnitude((f32x, f32y)), 2)} N")
+
+		dpg.configure_item("f23x_value", default_value=f"Force from link B in X: {f23x} N")
+		dpg.configure_item("f23y_value", default_value=f"Force from link B in Y: {f23y} N")
+		dpg.configure_item("f23_mag", default_value=f"Magnitude of force from link B: {round(magnitude((f23x, f23y)), 2)} N")
+		dpg.configure_item("f43x_value", default_value=f"Force from ground in X: {f43x} N")
+		dpg.configure_item("f43y_value", default_value=f"Force from ground in Y: {f43y} N")
+		dpg.configure_item("f43_mag", default_value=f"Magnitude of force from ground: {round(magnitude((f43x, f43y)), 2)} N")
+
+		dpg.configure_item("torque_value", default_value=f"Torque: {torque} Nm")
+
 		# Update the current angle indicators
 		dpg.configure_item("pos_indicator", default_value=self.current_angle)
 		dpg.configure_item("angular_velocity_indicator", default_value=self.current_angle)
@@ -448,6 +501,10 @@ class App:
 		dpg.configure_item("transmission_indicator", default_value=self.current_angle)
 		dpg.configure_item("velocity_ratio_indicator", default_value=self.current_angle)
 		dpg.configure_item("mechanical_advantage_indicator", default_value=self.current_angle)
+		dpg.configure_item("force_a_indicator", default_value=self.current_angle)
+		dpg.configure_item("force_b_indicator", default_value=self.current_angle)
+		dpg.configure_item("force_c_indicator", default_value=self.current_angle)
+		dpg.configure_item("torque_indicator", default_value=self.current_angle)
 
 	# Create mechanism drawing window
 	def create_mechanism_drawing(self):
@@ -956,33 +1013,116 @@ class App:
 	def create_dynamic_plot(self):
 		dpg.add_collapsing_header(label="Dynamic Analysis", tag="dynamic_analysis", parent="inspector")
 		with dpg.group(parent="dynamic_analysis"):
-
 			f41x = round(self._f41x[self._angle_index], 2)
 			f41y = round(self._f41y[self._angle_index], 2)
 			f21x = round(self._f21x[self._angle_index], 2)
 			f21y = round(self._f21y[self._angle_index], 2)
+			f12x = round(self._f12x[self._angle_index], 2)
+			f12y = round(self._f12y[self._angle_index], 2)
 			f32x = round(self._f32x[self._angle_index], 2)
 			f32y = round(self._f32y[self._angle_index], 2)
+			f23x = round(self._f23x[self._angle_index], 2)
+			f23y = round(self._f23y[self._angle_index], 2)
 			f43x = round(self._f43x[self._angle_index], 2)
 			f43y = round(self._f43y[self._angle_index], 2)
+			torque = round(self._torque[self._angle_index], 2)
 
-			dpg.add_text("Input Link A")
-			dpg.add_text(f"Force from ground in X: {f41x} N")
-			dpg.add_text(f"Force from ground in Y: {f41y} N")
-			dpg.add_text(f"Magnitude of force from ground: {round(magnitude((f41x, f41y)), 2)} N")
-			dpg.add_text(f"Range of force from ground in X: {round(min(self._f41x), 2)} to {round(max(self._f41x), 2)} N")
-			dpg.add_text(f"Range of force from ground in Y: {round(min(self._f41y), 2)} to {round(max(self._f41y), 2)} N")
-			dpg.add_text(f"Range of magnitude of force from ground: {round(min([ magnitude(f) for f in zip(self._f41x, self._f41y) ]), 2)} to {round(max([ magnitude(f) for f in zip(self._f41x, self._f41y) ]), 2)} N")
+			dpg.add_collapsing_header(label="Input Link A", tag="link_a_collapsing", parent="dynamic_analysis", default_open=True)
+			with dpg.group(parent="link_a_collapsing"):
+				dpg.add_text(f"Force from ground in X: {f41x} N", tag="f41x_value")
+				dpg.add_text(f"Force from ground in Y: {f41y} N", tag="f41y_value")
+				dpg.add_text(f"Magnitude of force from ground: {round(magnitude((f41x, f41y)), 2)} N", tag="f41_mag")
+				dpg.add_text(f"Range of force from ground in X: {round(min(self._f41x), 2)} to {round(max(self._f41x), 2)} N", tag="f41x_range")
+				dpg.add_text(f"Range of force from ground in Y: {round(min(self._f41y), 2)} to {round(max(self._f41y), 2)} N", tag="f41y_range")
+				dpg.add_text(f"Range of magnitude of force from ground: {round(min([ magnitude(f) for f in zip(self._f41x, self._f41y) ]), 2)} to {round(max([ magnitude(f) for f in zip(self._f41x, self._f41y) ]), 2)} N", tag="f41_mag_range")
+				dpg.add_text(f"Force from link B in X: {f21x} N", tag="f21x_value")
+				dpg.add_text(f"Force from link B in Y: {f21y} N", tag="f21y_value")
+				dpg.add_text(f"Magnitude of force from link 2: {round(magnitude((f21x, f21y)), 2)} N", tag="f21_mag")
+				dpg.add_text(f"Range of force from link B in X: {round(min(self._f21x), 2)} to {round(max(self._f21x), 2)} N", tag="f21x_range")
+				dpg.add_text(f"Range of force from link B in Y: {round(min(self._f21y), 2)} to {round(max(self._f21y), 2)} N", tag="f21y_range")
+				dpg.add_text(f"Range of magnitude of force from link B: {round(min([ magnitude(f) for f in zip(self._f21x, self._f21y) ]), 2)} to {round(max([ magnitude(f) for f in zip(self._f21x, self._f21y) ]), 2)} N", tag="f21_mag_range")
 
-			with dpg.plot():
-				dpg.add_plot_legend()
-				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
-				dpg.set_axis_limits(dpg.last_item(), 0, 360)
-				dpg.add_plot_axis(dpg.mvYAxis, label="Output Force on Link A (N)", tag="force_a_y_axis")
-				dpg.add_line_series(self._theta1, self._f41x, label="Ground X", parent="force_a_y_axis")
-				dpg.add_line_series(self._theta1, self._f41y, label="Ground Y", parent="force_a_y_axis")
-				dpg.add_line_series(self._theta1, [ magnitude(f) for f in zip(self._f41x, self._f41y) ], label="Ground Magnitude", parent="force_a_y_axis")
-				dpg.add_drag_line(label="Current Angle", tag="force_a_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+				with dpg.plot():
+					dpg.add_plot_legend()
+					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+					dpg.set_axis_limits(dpg.last_item(), 0, 360)
+					dpg.add_plot_axis(dpg.mvYAxis, label="Output Force on Link A (N)", tag="force_a_y_axis")
+					dpg.add_line_series(self._theta1, self._f41x, label="From Ground in X", parent="force_a_y_axis")
+					dpg.add_line_series(self._theta1, self._f41y, label="From Ground in Y", parent="force_a_y_axis")
+					dpg.add_line_series(self._theta1, [ magnitude(f) for f in zip(self._f41x, self._f41y) ], label="From Ground Magnitude", parent="force_a_y_axis")
+					dpg.add_line_series(self._theta1, self._f21x, label="From Link 2 in X", parent="force_a_y_axis")
+					dpg.add_line_series(self._theta1, self._f21y, label="From Link 2 in Y", parent="force_a_y_axis")
+					dpg.add_line_series(self._theta1, [ magnitude(f) for f in zip(self._f21x, self._f21y) ], label="From Link 2 Magnitude", parent="force_a_y_axis")
+					dpg.add_drag_line(label="Current Angle", tag="force_a_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+			dpg.add_collapsing_header(label="Link B", tag="link_b_collapsing", parent="dynamic_analysis", default_open=True)
+			with dpg.group(parent="link_b_collapsing"):
+				dpg.add_text(f"Force from input link A in X: {f12x} N", tag="f12x_value")
+				dpg.add_text(f"Force from input link A in Y: {f12y} N", tag="f12y_value")
+				dpg.add_text(f"Magnitude of force from input link A: {round(magnitude((f12x, f12y)), 2)} N", tag="f12_mag")
+				dpg.add_text(f"Range of force from input link A in X: {round(min(self._f12x), 2)} to {round(max(self._f12x), 2)} N", tag="f12x_range")
+				dpg.add_text(f"Range of force from input link A in Y: {round(min(self._f12y), 2)} to {round(max(self._f12y), 2)} N", tag="f12y_range")
+				dpg.add_text(f"Range of magnitude of force from input link A: {round(min([ magnitude(f) for f in zip(self._f12x, self._f12y) ]), 2)} to {round(max([ magnitude(f) for f in zip(self._f12x, self._f12y) ]), 2)} N", tag="f12_mag_range")
+				dpg.add_text(f"Force from link C in X: {f32x} N", tag="f32x_value")
+				dpg.add_text(f"Force from link C in Y: {f32y} N", tag="f32y_value")
+				dpg.add_text(f"Magnitude of force from link C: {round(magnitude((f32x, f32y)), 2)} N", tag="f32_mag")
+				dpg.add_text(f"Range of force from link C in X: {round(min(self._f32x), 2)} to {round(max(self._f32x), 2)} N", tag="f32x_range")
+				dpg.add_text(f"Range of force from link C in Y: {round(min(self._f32y), 2)} to {round(max(self._f32y), 2)} N", tag="f32y_range")
+				dpg.add_text(f"Range of magnitude of force from link C: {round(min([ magnitude(f) for f in zip(self._f32x, self._f32y) ]), 2)} to {round(max([ magnitude(f) for f in zip(self._f32x, self._f32y) ]), 2)} N", tag="f32_mag_range")
+
+				with dpg.plot():
+					dpg.add_plot_legend()
+					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+					dpg.set_axis_limits(dpg.last_item(), 0, 360)
+					dpg.add_plot_axis(dpg.mvYAxis, label="Output Force on Link B (N)", tag="force_b_y_axis")
+					dpg.add_line_series(self._theta1, self._f12x, label="From Input Link A in X", parent="force_b_y_axis")
+					dpg.add_line_series(self._theta1, self._f12y, label="From Input Link A in Y", parent="force_b_y_axis")
+					dpg.add_line_series(self._theta1, [ magnitude(f) for f in zip(self._f12x, self._f12y) ], label="From Link A Magnitude", parent="force_b_y_axis")
+					dpg.add_line_series(self._theta1, self._f32x, label="From Link C in X", parent="force_b_y_axis")
+					dpg.add_line_series(self._theta1, self._f32y, label="From Link C in Y", parent="force_b_y_axis")
+					dpg.add_line_series(self._theta1, [ magnitude(f) for f in zip(self._f32x, self._f32y) ], label="From Link C Magnitude", parent="force_b_y_axis")
+					dpg.add_drag_line(label="Current Angle", tag="force_b_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+			dpg.add_collapsing_header(label="Link C", tag="link_c_collapsing", parent="dynamic_analysis", default_open=True)
+			with dpg.group(parent="link_c_collapsing"):
+				dpg.add_text(f"Force from link B in X: {f23x} N", tag="f23x_value")
+				dpg.add_text(f"Force from link B in Y: {f23y} N", tag="f23y_value")
+				dpg.add_text(f"Magnitude of force from link B: {round(magnitude((f23x, f23y)), 2)} N", tag="f23_mag")
+				dpg.add_text(f"Range of force from link B in X: {round(min(self._f23x), 2)} to {round(max(self._f23x), 2)} N", tag="f23x_range")
+				dpg.add_text(f"Range of force from link B in Y: {round(min(self._f23y), 2)} to {round(max(self._f23y), 2)} N", tag="f23y_range")
+				dpg.add_text(f"Range of magnitude of force from link B: {round(min([ magnitude(f) for f in zip(self._f23x, self._f23y) ]), 2)} to {round(max([ magnitude(f) for f in zip(self._f23x, self._f23y) ]), 2)} N", tag="f23_mag_range")
+				dpg.add_text(f"Force from ground in X: {f43x} N", tag="f43x_value")
+				dpg.add_text(f"Force from ground in Y: {f43y} N", tag="f43y_value")
+				dpg.add_text(f"Magnitude of force from ground: {round(magnitude((f43x, f43y)), 2)} N", tag="f43_mag")
+				dpg.add_text(f"Range of force from ground in X: {round(min(self._f43x), 2)} to {round(max(self._f43x), 2)} N", tag="f43x_range")
+				dpg.add_text(f"Range of force from ground in Y: {round(min(self._f43y), 2)} to {round(max(self._f43y), 2)} N", tag="f43y_range")
+				dpg.add_text(f"Range of magnitude of force from ground: {round(min([ magnitude(f) for f in zip(self._f43x, self._f43y) ]), 2)} to {round(max([ magnitude(f) for f in zip(self._f43x, self._f43y) ]), 2)} N", tag="f43_mag_range")
+
+				with dpg.plot():
+					dpg.add_plot_legend()
+					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+					dpg.set_axis_limits(dpg.last_item(), 0, 360)
+					dpg.add_plot_axis(dpg.mvYAxis, label="Output Force on Link C (N)", tag="force_c_y_axis")
+					dpg.add_line_series(self._theta1, self._f23x, label="From Link B in X", parent="force_c_y_axis")
+					dpg.add_line_series(self._theta1, self._f23y, label="From Link B in Y", parent="force_c_y_axis")
+					dpg.add_line_series(self._theta1, [ magnitude(f) for f in zip(self._f23x, self._f23y) ], label="From Link B Magnitude", parent="force_c_y_axis")
+					dpg.add_line_series(self._theta1, self._f43x, label="From Ground in X", parent="force_c_y_axis")
+					dpg.add_line_series(self._theta1, self._f43y, label="From Ground in Y", parent="force_c_y_axis")
+					dpg.add_line_series(self._theta1, [ magnitude(f) for f in zip(self._f43x, self._f43y) ], label="From Ground Magnitude", parent="force_c_y_axis")
+					dpg.add_drag_line(label="Current Angle", tag="force_c_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+			dpg.add_collapsing_header(label="Motor Torque", tag="torque_collapsing", parent="dynamic_analysis", default_open=True)
+			with dpg.group(parent="torque_collapsing"):
+				dpg.add_text(f"Torque: {torque} Nm", tag="torque_value")
+				dpg.add_text(f"Range of torque: {round(min(self._torque), 2)} to {round(max(self._torque), 2)} Nm")
+
+				with dpg.plot():
+					dpg.add_plot_legend()
+					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+					dpg.set_axis_limits(dpg.last_item(), 0, 360)
+					dpg.add_plot_axis(dpg.mvYAxis, label="Output Torque (Nm)", tag="torque_y_axis")
+					dpg.add_line_series(self._theta1, self._torque, label="Torque", parent="torque_y_axis")
+					dpg.add_drag_line(label="Current Angle", tag="torque_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
 	# Analysis Settings
 	_arrow_scale = ARROW_SCALE
@@ -1026,8 +1166,12 @@ class App:
 	_f41y = []
 	_f21x = []
 	_f21y = []
+	_f12x = []
+	_f12y = []
 	_f32x = []
 	_f32y = []
+	_f23x = []
+	_f23y = []
 	_f43x = []
 	_f43y = []
 	_torque = []
