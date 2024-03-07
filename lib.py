@@ -71,7 +71,7 @@ def calculate_velocity(a, b, c, theta1, omega1, theta2, theta3):
 	return (omega2, omega3, velocityA, velocityB, velocityBA)
 
 # Calculate alpha 2 and 3, and linear acceleration A, B, and BA
-def calculate_acceleration(a, b, c, theta1, omega1, alpha1, theta2, theta3, omega2, omega3):
+def calculate_acceleration(a, b, c, knife_offset, theta1, omega1, alpha1, theta2, theta3, omega2, omega3):
 
 	# Calculate alphabetic constants
 	A = c * math.sin(theta3)
@@ -90,8 +90,13 @@ def calculate_acceleration(a, b, c, theta1, omega1, alpha1, theta2, theta3, omeg
 	accelerationBA = (-b*alpha2 *math.sin(theta2) - b*omega2**2*math.cos(theta2), b*alpha2*math.cos(theta2) - b*omega2**2*math.sin(theta2))
 	accelerationB = (-c*alpha3*math.sin(theta3) - c*omega3**2*math.cos(theta3), c*alpha3*math.cos(theta3) - c*omega3**2*math.sin(theta3))
 
+	# Calculate acceleration at center of gravity
+	cgAccelerationA = (-(0.5*a)*alpha1*math.sin(theta1) - (0.5*a)*omega1**2*math.cos(theta1), (0.5*a)*alpha1*math.cos(theta1) - (0.5*a)*omega1**2*math.sin(theta1))
+	cgAccelerationBA = (-(0.5*b)*alpha2 *math.sin(theta2) - (0.5*b)*omega2**2*math.cos(theta2), (0.5*b)*alpha2*math.cos(theta2) - (0.5*b)*omega2**2*math.sin(theta2))
+	cgAccelerationB = (-(0.5*(c+knife_offset))*alpha3*math.sin(theta3) - (0.5*(c+knife_offset))*omega3**2*math.cos(theta3), (0.5*(c+knife_offset))*alpha3*math.cos(theta3) - (0.5*(c+knife_offset))*omega3**2*math.sin(theta3))
+
 	# Return the calculated accelerations
-	return (alpha2, alpha3, accelerationA, accelerationB, accelerationBA)
+	return (alpha2, alpha3, accelerationA, accelerationB, accelerationBA, cgAccelerationA, cgAccelerationB, cgAccelerationBA)
 
 # Calculate transmission angle and mechanical advantage
 def calculate_performance(a, b, c, d, theta1, omega1, omega3):
@@ -148,10 +153,20 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 	)
 
 	# Solve for acceleration
-	(alpha2, alpha3, accelerationA, accelerationB, accelerationBA) = calculate_acceleration(
+	(
+		alpha2,
+		alpha3,
+		accelerationA,
+		accelerationB,
+		accelerationBA,
+		cgAccelerationA,
+		cgAccelerationB,
+		cgAccelerationBA,
+	) = calculate_acceleration(
 		a=a,
 		b=b,
 		c=c,
+		knife_offset=knife_offset,
 		theta1=theta1,
 		omega1=omega1,
 		alpha1=alpha1,
@@ -200,7 +215,9 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 		accelerationA,
 		accelerationB,
 		accelerationBA,
-		
+		cgAccelerationA,
+		cgAccelerationB,
+		cgAccelerationBA,
 	)
 
 # Loops through all possible angles, calculates the results, and aggregates them into arrays
@@ -208,7 +225,7 @@ def analyze_mechanism(a, b, c, d, knife_offset, theta4, omega1, alpha1, offset=0
 
 	# Output arrays
 	output = []
-	NUM_RESULTS = 26
+	NUM_RESULTS = 29
 	NUM_SCALAR_RESULTS = 8
 
 	# For each data returned from the analysis
