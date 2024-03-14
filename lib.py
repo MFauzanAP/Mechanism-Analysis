@@ -179,18 +179,18 @@ def calculate_dynamic(
 	
 	# Return results
 	return (
-		forces_and_torques[0,0],
-		forces_and_torques[1,0],
-		forces_and_torques[2,0],
-		forces_and_torques[3,0],
+		-1*forces_and_torques[0,0],
+		-1*forces_and_torques[1,0],
 		-1*forces_and_torques[2,0],
 		-1*forces_and_torques[3,0],
-		forces_and_torques[4,0],
-		forces_and_torques[5,0],
+		-1*-1*forces_and_torques[2,0],
+		-1*-1*forces_and_torques[3,0],
 		-1*forces_and_torques[4,0],
 		-1*forces_and_torques[5,0],
-		forces_and_torques[6,0],
-		forces_and_torques[7,0],
+		-1*-1*forces_and_torques[4,0],
+		-1*-1*forces_and_torques[5,0],
+		-1*forces_and_torques[6,0],
+		-1*forces_and_torques[7,0],
 		forces_and_torques[8,0],
 	)
 
