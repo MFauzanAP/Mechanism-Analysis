@@ -298,6 +298,10 @@ class App:
 		arrow_c2 = 0
 		arrow_d1 = 0
 		arrow_d2 = 0
+		arrow_e1 = 0
+		arrow_e2 = 0
+		arrow_f1 = 0
+		arrow_f2 = 0
 
 		if self.arrow == "velocity":
 			vA = self._velocityA[self._angle_index]
@@ -326,22 +330,30 @@ class App:
 		elif self.arrow == "force":
 			f41 = (self._f41x[self._angle_index], self._f41y[self._angle_index])
 			f21 = (self._f21x[self._angle_index], self._f21y[self._angle_index])
+			f12 = (self._f12x[self._angle_index], self._f12y[self._angle_index])
 			f32 = (self._f32x[self._angle_index], self._f32y[self._angle_index])
+			f23 = (self._f23x[self._angle_index], self._f23y[self._angle_index])
 			f43 = (self._f43x[self._angle_index], self._f43y[self._angle_index])
 
 			arrow_a1 = a1
 			arrow_a2 = calculate_end_point(arrow_a1, magnitude(f41)*self._arrow_scale, angle(f41))
 			arrow_b1 = b1
-			arrow_b2 = calculate_end_point(arrow_b1, magnitude(f21)*self._arrow_scale, angle(f21))
-			arrow_c1 = c1
-			arrow_c2 = calculate_end_point(arrow_c1, magnitude(f32)*self._arrow_scale, angle(f32))
-			arrow_d1 = d1
+			arrow_b2 = calculate_end_point(arrow_b1, magnitude(f12)*self._arrow_scale, angle(f12))
+			arrow_c1 = c2
+			arrow_c2 = calculate_end_point(arrow_c1, magnitude(f23)*self._arrow_scale, angle(f23))
+			arrow_d1 = d2
 			arrow_d2 = calculate_end_point(arrow_d1, magnitude(f43)*self._arrow_scale, angle(f43))
+			arrow_e1 = a2
+			arrow_e2 = calculate_end_point(arrow_e1, magnitude(f21)*self._arrow_scale, angle(f21))
+			arrow_f1 = b2
+			arrow_f2 = calculate_end_point(arrow_f1, magnitude(f32)*self._arrow_scale, angle(f32))
 
 		dpg.configure_item("arrow_a", p1=arrow_a2, p2=arrow_a1)
 		dpg.configure_item("arrow_b", p1=arrow_b2, p2=arrow_b1)
 		dpg.configure_item("arrow_c", p1=arrow_c2, p2=arrow_c1)
 		if arrow_d1 != arrow_d2: dpg.configure_item("arrow_d", p1=arrow_d2, p2=arrow_d1)
+		dpg.configure_item("arrow_e", p1=arrow_e2, p2=arrow_e1)
+		dpg.configure_item("arrow_f", p1=arrow_f2, p2=arrow_f1)
 
 		# Update the bounding box
 		x_coords = [a1[0], a2[0], b1[0], b2[0], c1[0], c2[0], d1[0], d2[0], kl1[0], kl2[0]]
@@ -590,6 +602,10 @@ class App:
 					arrow_c2 = 0
 					arrow_d1 = 0
 					arrow_d2 = 0
+					arrow_e1 = 0
+					arrow_e2 = 0
+					arrow_f1 = 0
+					arrow_f2 = 0
 
 					if self.arrow == "velocity":
 						vA = self._velocityA[self._angle_index]
@@ -616,22 +632,30 @@ class App:
 					elif self.arrow == "force":
 						f41 = (self._f41x[self._angle_index], self._f41y[self._angle_index])
 						f21 = (self._f21x[self._angle_index], self._f21y[self._angle_index])
+						f12 = (self._f12x[self._angle_index], self._f12y[self._angle_index])
 						f32 = (self._f32x[self._angle_index], self._f32y[self._angle_index])
+						f23 = (self._f23x[self._angle_index], self._f23y[self._angle_index])
 						f43 = (self._f43x[self._angle_index], self._f43y[self._angle_index])
 
 						arrow_a1 = a1
 						arrow_a2 = calculate_end_point(arrow_a1, magnitude(f41)*self._arrow_scale, angle(f41))
 						arrow_b1 = b1
-						arrow_b2 = calculate_end_point(arrow_b1, magnitude(f21)*self._arrow_scale, angle(f21))
-						arrow_c1 = c1
-						arrow_c2 = calculate_end_point(arrow_c1, magnitude(f32)*self._arrow_scale, angle(f32))
-						arrow_d1 = d1
+						arrow_b2 = calculate_end_point(arrow_b1, magnitude(f12)*self._arrow_scale, angle(f12))
+						arrow_c1 = c2
+						arrow_c2 = calculate_end_point(arrow_c1, magnitude(f23)*self._arrow_scale, angle(f23))
+						arrow_d1 = d2
 						arrow_d2 = calculate_end_point(arrow_d1, magnitude(f43)*self._arrow_scale, angle(f43))
+						arrow_e1 = a2
+						arrow_e2 = calculate_end_point(arrow_e1, magnitude(f21)*self._arrow_scale, angle(f21))
+						arrow_f1 = b2
+						arrow_f2 = calculate_end_point(arrow_f1, magnitude(f32)*self._arrow_scale, angle(f32))
 
-					dpg.draw_arrow(arrow_a2, arrow_a1, tag="arrow_a", color=App.RED_50, thickness=App.ARROW_THICKNESS)
-					dpg.draw_arrow(arrow_b2, arrow_b1, tag="arrow_b", color=App.BLUE_50, thickness=App.ARROW_THICKNESS)
-					dpg.draw_arrow(arrow_c2, arrow_c1, tag="arrow_c", color=App.YELLOW_50, thickness=App.ARROW_THICKNESS)
-					if arrow_d1 != arrow_d2: dpg.draw_arrow(arrow_d2, arrow_d1, tag="arrow_d", color=App.BROWN_50, thickness=App.ARROW_THICKNESS)
+					dpg.draw_arrow(arrow_a2, arrow_a1, tag="arrow_a", color=App.GREY, thickness=App.ARROW_THICKNESS)
+					dpg.draw_arrow(arrow_b2, arrow_b1, tag="arrow_b", color=App.RED_50, thickness=App.ARROW_THICKNESS)
+					dpg.draw_arrow(arrow_c2, arrow_c1, tag="arrow_c", color=App.BLUE_50, thickness=App.ARROW_THICKNESS)
+					if arrow_d1 != arrow_d2: dpg.draw_arrow(arrow_d2, arrow_d1, tag="arrow_d", color=App.GREY, thickness=App.ARROW_THICKNESS)
+					dpg.draw_arrow(arrow_e2, arrow_e1, tag="arrow_e", color=App.BLUE_50, thickness=App.ARROW_THICKNESS)
+					dpg.draw_arrow(arrow_f2, arrow_f1, tag="arrow_f", color=App.YELLOW_50, thickness=App.ARROW_THICKNESS)
 
 				# Draw the bounding box
 				with dpg.draw_layer(tag="bounding_box"):
