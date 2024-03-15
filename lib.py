@@ -92,9 +92,9 @@ def calculate_acceleration(a, b, c, knife_offset, theta1, omega1, alpha1, theta2
 	accelerationB = (-c*alpha3*math.sin(theta3) - c*omega3**2*math.cos(theta3), c*alpha3*math.cos(theta3) - c*omega3**2*math.sin(theta3))
 
 	# Calculate acceleration at center of gravity
-	cgAccelerationA = (-(0.5*a)*alpha1*math.sin(theta1) - (0.5*a)*omega1**2*math.cos(theta1), (0.5*a)*alpha1*math.cos(theta1) - (0.5*a)*omega1**2*math.sin(theta1))
-	cgAccelerationBA = (-(0.5*b)*alpha2 *math.sin(theta2) - (0.5*b)*omega2**2*math.cos(theta2), (0.5*b)*alpha2*math.cos(theta2) - (0.5*b)*omega2**2*math.sin(theta2))
-	cgAccelerationB = (-(0.5*(c+knife_offset))*alpha3*math.sin(theta3) - (0.5*(c+knife_offset))*omega3**2*math.cos(theta3), (0.5*(c+knife_offset))*alpha3*math.cos(theta3) - (0.5*(c+knife_offset))*omega3**2*math.sin(theta3))
+	cgAccelerationA = (-a*alpha1*math.sin(theta1) - a*omega1**2*math.cos(theta1), a*alpha1*math.cos(theta1) - a*omega1**2*math.sin(theta1))
+	cgAccelerationBA = (-b*alpha2 *math.sin(theta2) - b*omega2**2*math.cos(theta2), b*alpha2*math.cos(theta2) - b*omega2**2*math.sin(theta2))
+	cgAccelerationB = (-c*alpha3*math.sin(theta3) - c*omega3**2*math.cos(theta3), c*alpha3*math.cos(theta3) - c*omega3**2*math.sin(theta3))
 
 	# Return the calculated accelerations
 	return (alpha2, alpha3, accelerationA, accelerationB, accelerationBA, cgAccelerationA, cgAccelerationB, cgAccelerationBA)
@@ -167,11 +167,11 @@ def calculate_dynamic(
 
 		[0,0,-1, 0,1,0, 0,0,0],
 		[0,0,0, -1,0,1, 0,0,0],
-		[0,0,-r12y, -r12x,-r32y,r32x, 0,0,0],
+		[0,0,r12y, -r12x,-r32y,r32x, 0,0,0],
 
 		[0,0,0, 0,-1,0, 1,0,0],
 		[0,0,0, 0,0,-1, 0,1,0],
-		[0,0,0, 0,r23y,-r23x, -r43y,r43x,0],
+		[0,0,0, 0,r23y,r23x, -r43y,r43x,0],
 	]))
 
 	# Calculate the forces and torques
@@ -191,7 +191,7 @@ def calculate_dynamic(
 		-1*-1*forces_and_torques[5,0],
 		-1*forces_and_torques[6,0],
 		-1*forces_and_torques[7,0],
-		forces_and_torques[8,0],
+		-1*forces_and_torques[8,0],
 	)
 
 # Calculate and aggregate position, velocity, and acceleration analysis results for the given input angle
