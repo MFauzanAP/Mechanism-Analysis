@@ -108,6 +108,12 @@ def calculate_performance(a, b, c, d, theta1, omega1, omega3):
 
 # Calculate the forces at each joint and at the knife edge, as well as the driving torque required
 def calculate_dynamic(
+	link_diameter,
+	cross_shape,
+	density,
+	force_start,
+	force_end,
+	force_mag,
 	a,
 	b,
 	c,
@@ -122,19 +128,41 @@ def calculate_dynamic(
 	cgAccelerationB,
 	cgAccelerationBA,
 ):
+	link_radius = link_diameter / 2
+
+	# Calculate the mass of each link
+	cross_area = 0
+	if cross_shape == "square": cross_area = link_diameter**2
+	elif cross_shape == "circle": cross_area = math.pi * link_radius**2
+	elif cross_shape == "hollow circle (50%)": cross_area = math.pi * link_radius**2 * 0.5
+	m1 = density * cross_area * a
+	m2 = density * cross_area * b
+	m3 = density * cross_area * c
+
+	# Calculate the moment of inertia of each link
+	i1 = 0
+	i2 = 0
+	i3 = 0
+	i1 = 0.25*m1*link_radius**2 + (1/12)*m1*a**2
+	i2 = 0.25*m2*link_radius**2 + (1/12)*m2*b**2
+	i3 = 0.25*m3*link_radius**2 + (1/12)*m3*c**2
+	# TODO implement moment of inertia for other shapes
+	# if cross_shape == "square": pass
+	# elif cross_shape == "circle":
+	# 	i1 = 0.25*m1*link_radius**2 + (1/12)*m1*a**2
+	# 	i2 = 0.25*m2*link_radius**2 + (1/12)*m2*b**2
+	# 	i3 = 0.25*m3*link_radius**2 + (1/12)*m3*c**2
+	# elif cross_shape == "hollow circle (50%)": pass
+
+	if round(math.degrees(theta1)) == 340:
+		print(cross_shape, cross_area)
+		print(m1, m2, m3)
+		print(i1, i2, i3)
+
 	# Construct known-values matrix
-	m1 = 5.525
-	m2 = 5.05
-	m3 = 5.05
-	i1 = 1.557
-	i2 = 1.511
-	i3 = 2.455
-	force_start = 338
-	force_end = 358
 	force_mid = (force_start + force_end) / 2
 	force_amp = (force_end - force_start) / 2
-	force_max = 20
-	f_cut = (abs(math.degrees(theta1) - force_mid) - force_amp) * force_max / force_amp if math.degrees(theta1) > force_start and math.degrees(theta1) < force_end else 0
+	f_cut = (abs(math.degrees(theta1) - force_mid) - force_amp) * force_mag / force_amp if math.degrees(theta1) > force_start and math.degrees(theta1) < force_end else 0
 	known_matrix = transpose(matrix(array([
 		m1*cgAccelerationA[0],
 		m1*cgAccelerationA[1],
@@ -195,7 +223,26 @@ def calculate_dynamic(
 	)
 
 # Calculate and aggregate position, velocity, and acceleration analysis results for the given input angle
-def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, theta1, theta4, omega1, alpha1):
+def calculate_results(
+	offset,
+	link_scale,
+	link_diameter,
+	cross_shape,
+	density,
+	force_start,
+	force_end,
+	force_mag,
+	a,
+	b,
+	c,
+	d,
+	knife_offset,
+	position,
+	theta1,
+	theta4,
+	omega1,
+	alpha1,
+):
 
 	# Convert to appropriate units
 	theta1 = math.radians(theta1)
@@ -292,6 +339,12 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 		f43y,
 		torque,
 	) = calculate_dynamic(
+		link_diameter=link_diameter,
+		cross_shape=cross_shape,
+		density=density,
+		force_start=force_start,
+		force_end=force_end,
+		force_mag=force_mag,
 		a=a,
 		b=b,
 		c=c,
@@ -354,7 +407,27 @@ def calculate_results(offset, link_scale, a, b, c, d, knife_offset, position, th
 	)
 
 # Loops through all possible angles, calculates the results, and aggregates them into arrays
-def analyze_mechanism(a, b, c, d, knife_offset, theta4, omega1, alpha1, offset=0, link_scale=500, resolution=360, position="OPEN", convert=True):
+def analyze_mechanism(
+	a,
+	b,
+	c,
+	d,
+	knife_offset,
+	theta4,
+	omega1,
+	alpha1,
+	offset=0,
+	link_scale=500,
+	link_diameter=0.01,
+	cross_shape="circle",
+	density=2700,
+	force_start=0,
+	force_end=20,
+	force_mag=100,
+	resolution=360,
+	position="OPEN",
+	convert=True,
+):
 
 	# Output arrays
 	output = []
@@ -371,6 +444,12 @@ def analyze_mechanism(a, b, c, d, knife_offset, theta4, omega1, alpha1, offset=0
 		results = calculate_results(
 			offset=offset,
 			link_scale=link_scale,
+			link_diameter=link_diameter,
+			cross_shape=cross_shape,
+			density=density,
+			force_start=force_start,
+			force_end=force_end,
+			force_mag=force_mag,
 			a=a,
 			b=b,
 			c=c,

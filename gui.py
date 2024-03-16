@@ -44,6 +44,14 @@ class App:
 	omega1 = 10				# Input Speed (rpm)
 	alpha1 = 0				# Motor Acceleration (deg/s^2)
 
+	# Mechanism Properties
+	link_diameter = 0.05	# Diameter of the links (m)
+	cross_shape = "circle"	# Shape of the cross (square, circle, or hollow circle (50%))
+	density = 2700			# Density of the material (kg/m^3)
+	force_start = 338		# Start of the cutting force in terms of the input angle (deg)
+	force_end = 358			# End of the cutting force in terms of the input angle (deg)
+	force_mag = 20			# Magnitude of the cutting force (N)
+
 	# Analysis Settings
 	current_angle = 338		# Current angle of the input link
 	resolution = 360
@@ -127,6 +135,12 @@ class App:
 			alpha1=self.alpha1,
 			offset=self._offset,
 			link_scale=App.LINK_SCALE,
+			link_diameter=self.link_diameter,
+			cross_shape=self.cross_shape,
+			density=self.density,
+			force_start=self.force_start,
+			force_end=self.force_end,
+			force_mag=self.force_mag,
 			resolution=self.resolution,
 			position=self.position,
 		)
@@ -221,9 +235,16 @@ class App:
 		self.b = dpg.get_value("b_input")
 		self.c = dpg.get_value("c_input")
 		self.d = dpg.get_value("d_input")
+		self.knife_offset = dpg.get_value("knife_offset_input")
 		self.theta4 = dpg.get_value("theta4_input")
 		self.omega1 = dpg.get_value("omega1_input")
 		self.alpha1 = dpg.get_value("alpha1_input")
+		self.link_diameter = dpg.get_value("link_diameter_input")
+		self.cross_shape = str.lower(dpg.get_value("shape_input"))
+		self.density = dpg.get_value("density_input")
+		self.force_start = dpg.get_value("force_start_input")
+		self.force_end = dpg.get_value("force_end_input")
+		self.force_mag = dpg.get_value("force_mag_input")
 		self.current_angle = dpg.get_value("theta1_input")
 		self.resolution = dpg.get_value("resolution_input")
 		self.position = str.lower(dpg.get_value("pos_input"))
@@ -348,12 +369,12 @@ class App:
 			arrow_f1 = b2
 			arrow_f2 = calculate_end_point(arrow_f1, magnitude(f32)*self._arrow_scale, angle(f32))
 
-		dpg.configure_item("arrow_a", p1=arrow_a2, p2=arrow_a1)
-		dpg.configure_item("arrow_b", p1=arrow_b2, p2=arrow_b1)
-		dpg.configure_item("arrow_c", p1=arrow_c2, p2=arrow_c1)
+		if arrow_a1 != arrow_a2: dpg.configure_item("arrow_a", p1=arrow_a2, p2=arrow_a1)
+		if arrow_b1 != arrow_b2: dpg.configure_item("arrow_b", p1=arrow_b2, p2=arrow_b1)
+		if arrow_c1 != arrow_c2: dpg.configure_item("arrow_c", p1=arrow_c2, p2=arrow_c1)
 		if arrow_d1 != arrow_d2: dpg.configure_item("arrow_d", p1=arrow_d2, p2=arrow_d1)
-		dpg.configure_item("arrow_e", p1=arrow_e2, p2=arrow_e1)
-		dpg.configure_item("arrow_f", p1=arrow_f2, p2=arrow_f1)
+		if arrow_e1 != arrow_e2: dpg.configure_item("arrow_e", p1=arrow_e2, p2=arrow_e1)
+		if arrow_f1 != arrow_f2: dpg.configure_item("arrow_f", p1=arrow_f2, p2=arrow_f1)
 
 		# Update the bounding box
 		x_coords = [a1[0], a2[0], b1[0], b2[0], c1[0], c2[0], d1[0], d2[0], kl1[0], kl2[0]]
@@ -706,7 +727,7 @@ class App:
 			label="Inspector",
 			tag="inspector",
 			width=App.TAB_WIDTH,
-			height=App.WINDOW_HEIGHT,
+			height=App.WINDOW_HEIGHT - 40,
 			pos=(0, 0),
 			no_resize=True,
 			no_close=True,
@@ -718,10 +739,18 @@ class App:
 			dpg.add_slider_float(label="B", tag="b_input", default_value=self.b, max_value=1)
 			dpg.add_slider_float(label="C", tag="c_input", default_value=self.c, max_value=1)
 			dpg.add_slider_float(label="Ground Link D", tag="d_input", default_value=self.d, max_value=1)
+			dpg.add_slider_float(label="Knife Offset", tag="knife_offset_input", default_value=self.knife_offset, max_value=1)
 			dpg.add_text("Kinematic Input")
 			dpg.add_slider_float(label="Ground Angle (deg)", tag="theta4_input", default_value=self.theta4, min_value=0, max_value=360)
 			dpg.add_slider_float(label="Input Speed (rpm)", tag="omega1_input", default_value=self.omega1, min_value=-15, max_value=15)
 			dpg.add_slider_float(label="Motor Acc. (deg/s^2)", tag="alpha1_input", default_value=self.alpha1, min_value=0, max_value=5)
+			dpg.add_text("Mechanism Properties")
+			dpg.add_slider_float(label="Link Diameter (m)", tag="link_diameter_input", default_value=self.link_diameter, min_value=0.001, max_value=1)
+			dpg.add_radio_button(["Square", "Circle", "Hollow Circle (50%)"], tag="shape_input", default_value=str.capitalize(self.cross_shape))
+			dpg.add_slider_float(label="Material Density (kg/m^3)", tag="density_input", default_value=self.density, min_value=0, max_value=10000)
+			dpg.add_slider_float(label="Cutting Force Start (deg)", tag="force_start_input", default_value=self.force_start, min_value=0, max_value=360)
+			dpg.add_slider_float(label="Cutting Force End (deg)", tag="force_end_input", default_value=self.force_end, min_value=0, max_value=360)
+			dpg.add_slider_float(label="Cutting Force Magnitude (N)", tag="force_mag_input", default_value=self.force_mag, min_value=0, max_value=500)
 			dpg.add_text("Analysis Settings")
 			dpg.add_slider_float(label="Input Angle", tag="theta1_input", default_value=self.current_angle, min_value=0, max_value=360)
 			dpg.add_slider_int(label="Resolution", tag="resolution_input", default_value=App.resolution, max_value=500)
