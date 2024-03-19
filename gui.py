@@ -77,6 +77,7 @@ class App:
 		self.create_acceleration_plot()
 		self.create_performance_plot()
 		self.create_dynamic_plot()
+		self.create_stress_plot()
 
 	# Uses the updated mechanism properties to update the computed values
 	def analyze_mechanism(self):
@@ -124,6 +125,12 @@ class App:
 			f43x,
 			f43y,
 			torque,
+			sigma_1,
+			sigma_2,
+			sigma_3,
+			n_1,
+			n_2,
+			n_3,
 		) = analyze_mechanism(
 			a=self.a,
 			b=self.b,
@@ -207,6 +214,12 @@ class App:
 		self._f43x = f43x							# N
 		self._f43y = f43y							# N
 		self._torque = torque						# Nm
+		self._sigma_1 = sigma_1						# MPa
+		self._sigma_2 = sigma_2						# MPa
+		self._sigma_3 = sigma_3						# MPa
+		self._n_1 = n_1
+		self._n_2 = n_2
+		self._n_3 = n_3
 		self._transmission_angle = transmission_angle
 		self._velocity_ratio = velocity_ratio
 		self._mechanical_advantage = mechanical_advantage
@@ -1223,6 +1236,47 @@ class App:
 					dpg.add_line_series(self._theta1, self._torque, label="Torque", parent="torque_y_axis")
 					dpg.add_drag_line(label="Current Angle", tag="torque_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
+	# Create stress and factor of safety plots
+	def create_stress_plot(self):
+		dpg.add_collapsing_header(label="Stress Analysis", tag="stress_analysis", parent="inspector")
+		with dpg.group(parent="stress_analysis"):
+			sigma_1 = round(self._sigma_1[self._angle_index], 2)
+			sigma_2 = round(self._sigma_2[self._angle_index], 2)
+			sigma_3 = round(self._sigma_3[self._angle_index], 2)
+
+			dpg.add_text(f"Max Stress in Input Link: {sigma_1} MPa", tag="sigma_1_value")
+			dpg.add_text(f"Range of Max Stress in Input Link: {round(min(self._sigma_1), 2)} to {round(max(self._sigma_1), 2)} MPa")
+
+			with dpg.plot():
+				dpg.add_plot_legend()
+				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+				dpg.set_axis_limits(dpg.last_item(), 0, 360)
+				dpg.add_plot_axis(dpg.mvYAxis, label="Max Stress in Input Link (MPa)", tag="stress_y_axis")
+				dpg.add_line_series(self._theta1, self._sigma_1, label="Max Stress", parent="stress_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="stress_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+			dpg.add_text(f"Max Stress: {sigma_2} MPa", tag="sigma_2_value")
+			dpg.add_text(f"Range of Max Stress: {round(min(self._sigma_2), 2)} to {round(max(self._sigma_2), 2)} MPa")
+
+			with dpg.plot():
+				dpg.add_plot_legend()
+				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+				dpg.set_axis_limits(dpg.last_item(), 0, 360)
+				dpg.add_plot_axis(dpg.mvYAxis, label="Min Stress (MPa)", tag="min_stress_y_axis")
+				dpg.add_line_series(self._theta1, self._sigma_2, label="Min Stress", parent="min_stress_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="min_stress_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+			dpg.add_text(f"Max Stress: {sigma_3} MPa", tag="sigma_3_value")
+			dpg.add_text(f"Range of Max Stress: {round(min(self._sigma_3), 2)} to {round(max(self._sigma_3), 2)} MPa")
+
+			with dpg.plot():
+				dpg.add_plot_legend()
+				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+				dpg.set_axis_limits(dpg.last_item(), 0, 360)
+				dpg.add_plot_axis(dpg.mvYAxis, label="Max Stress (MPa)", tag="max_stress_y_axis")
+				dpg.add_line_series(self._theta1, self._sigma_3, label="Max Stress", parent="max_stress_y_axis")
+				dpg.add_drag_line(label="Current Angle", tag="max_stress_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
 	# Analysis Settings
 	_arrow_scale = ARROW_SCALE
 	_offset = (WINDOW_WIDTH * 0.25, WINDOW_HEIGHT * 0.55)
@@ -1274,6 +1328,12 @@ class App:
 	_f43x = []
 	_f43y = []
 	_torque = []
+	_sigma_1 = []
+	_sigma_2 = []
+	_sigma_3 = []
+	_n_1 = []
+	_n_2 = []
+	_n_3 = []
 	_transmission_angle = []
 	_velocity_ratio = []
 	_mechanical_advantage = []

@@ -106,28 +106,8 @@ def calculate_performance(a, b, c, d, theta1, omega1, omega3):
 	mechanical_advantage = (omega1 * a) / (omega3 * c)
 	return (transmission_angle, velocity_ratio, mechanical_advantage)
 
-# Calculate the forces at each joint and at the knife edge, as well as the driving torque required
-def calculate_dynamic(
-	link_diameter,
-	cross_shape,
-	density,
-	force_start,
-	force_end,
-	force_mag,
-	a,
-	b,
-	c,
-	knife_offset,
-	theta1,
-	theta2,
-	theta3,
-	alpha1,
-	alpha2,
-	alpha3,
-	cgAccelerationA,
-	cgAccelerationB,
-	cgAccelerationBA,
-):
+# Calculate link geometric properties
+def calculate_geometric_properties(link_diameter, cross_shape, density, a, b, c):
 	link_radius = link_diameter / 2
 
 	# Calculate the mass of each link
@@ -154,11 +134,34 @@ def calculate_dynamic(
 	# 	i3 = 0.25*m3*link_radius**2 + (1/12)*m3*c**2
 	# elif cross_shape == "hollow circle (50%)": pass
 
-	if round(math.degrees(theta1)) == 340:
-		print(cross_shape, cross_area)
-		print(m1, m2, m3)
-		print(i1, i2, i3)
+	# Return the calculated properties
+	return (m1, m2, m3, cross_area, i1, i2, i3)
 
+# Calculate the forces at each joint and at the knife edge, as well as the driving torque required
+def calculate_dynamic(
+	m1,
+	m2,
+	m3,
+	i1,
+	i2,
+	i3,
+	force_start,
+	force_end,
+	force_mag,
+	a,
+	b,
+	c,
+	knife_offset,
+	theta1,
+	theta2,
+	theta3,
+	alpha1,
+	alpha2,
+	alpha3,
+	cgAccelerationA,
+	cgAccelerationB,
+	cgAccelerationBA,
+):
 	# Construct known-values matrix
 	force_mid = (force_start + force_end) / 2
 	force_amp = (force_end - force_start) / 2
@@ -222,6 +225,72 @@ def calculate_dynamic(
 		-1*forces_and_torques[8,0],
 	)
 
+# Calculate mechanism strength properties
+def calculate_strength(
+	link_diameter,
+	cross_shape,
+	s_ut,
+):
+	s_e_prime = s_ut / 2
+	if s_e_prime > 1400: s_e_prime = 700
+
+	# Calculate marin factors
+	# TODO make these changeable
+	ka = 3.04 * math.pow(s_ut, -0.217)
+	d_e = 0.808 * link_diameter if cross_shape == "square" else 0.37 * link_diameter
+	kb = 1.51 * math.pow(d_e, -0.157) if d_e < 0.254 else 1.24 * math.pow(d_e, -0.107)
+	kc = 1.0
+	kd = 1.0
+	ke = 1.0
+
+	# Calculate actual fatigue strength
+	s_e = s_e_prime * ka * kb * kc * kd * ke
+
+	# Find stress concentration factor
+	kt = 1.85					# assuming the hole is atleast a third of the diameter of the link
+	roota = 1.24 - (2.25e-3 * s_ut) + (1.6e-6 * s_ut**2) - (4.11e-10 * s_ut**3)
+	kf = 1 + ((kt - 1) / (1 + math.sqrt(math.pow(roota, 2) / (link_diameter / 2))))
+
+	return (s_e, kf)
+
+# Calculate factor of safety for each link
+def calculate_factor_of_safety(
+	theta1,
+	alpha1,
+	alpha2,
+	alpha3,
+	link_diameter,
+	i1,
+	i2,
+	i3,
+	s_ut,
+	s_e,
+	kf,
+):
+	m_max_1 = i1 * alpha1
+	m_max_2 = i2 * alpha2
+	m_max_3 = i3 * alpha3
+
+	sigma_max_1 = m_max_1 * (link_diameter / 2) / i1
+	sigma_max_2 = m_max_2 * (link_diameter / 2) / i2
+	sigma_max_3 = m_max_3 * (link_diameter / 2) / i3
+
+	# Assuming stress is fluctuating from 0 to max
+	sigma_1 = sigma_max_1 * kf
+	sigma_2 = sigma_max_2 * kf
+	sigma_3 = sigma_max_3 * kf
+
+	# Calculate factor of safety for each link
+	# if round(math.degrees(theta1)) == 340: print(s_e, sigma_1, sigma_2, sigma_3)
+	print(m_max_1, m_max_2, m_max_3)
+	print(sigma_max_1, sigma_max_2, sigma_max_3)
+	print(s_e, sigma_1, sigma_2, sigma_3)
+	n_1 = math.pow((sigma_1 / s_e) + (sigma_1 / s_ut), -1) if sigma_1 > 0 else 0
+	n_2 = math.pow((sigma_2 / s_e) + (sigma_2 / s_ut), -1) if sigma_2 > 0 else 0
+	n_3 = math.pow((sigma_3 / s_e) + (sigma_3 / s_ut), -1) if sigma_3 > 0 else 0
+
+	return (sigma_1, sigma_2, sigma_3, n_1, n_2, n_3)
+
 # Calculate and aggregate position, velocity, and acceleration analysis results for the given input angle
 def calculate_results(
 	offset,
@@ -229,6 +298,7 @@ def calculate_results(
 	link_diameter,
 	cross_shape,
 	density,
+	s_ut,
 	force_start,
 	force_end,
 	force_mag,
@@ -323,6 +393,16 @@ def calculate_results(
 		omega3=omega3,
 	)
 
+	# Solve for link geometric properties
+	(m1, m2, m3, cross_area, i1, i2, i3) = calculate_geometric_properties(
+		link_diameter=link_diameter,
+		cross_shape=cross_shape,
+		density=density,
+		a=a,
+		b=b,
+		c=c,
+	)
+
 	# Solve for dynamic forces and torque
 	(
 		f41x,
@@ -339,9 +419,12 @@ def calculate_results(
 		f43y,
 		torque,
 	) = calculate_dynamic(
-		link_diameter=link_diameter,
-		cross_shape=cross_shape,
-		density=density,
+		m1=m1,
+		m2=m2,
+		m3=m3,
+		i1=i1,
+		i2=i2,
+		i3=i3,
 		force_start=force_start,
 		force_end=force_end,
 		force_mag=force_mag,
@@ -358,6 +441,28 @@ def calculate_results(
 		cgAccelerationA=cgAccelerationA,
 		cgAccelerationB=cgAccelerationB,
 		cgAccelerationBA=cgAccelerationBA,
+	)
+
+	# Solve for strength properties
+	(s_e, kf) = calculate_strength(
+		link_diameter=link_diameter,
+		cross_shape=cross_shape,
+		s_ut=s_ut,
+	)
+
+	# Solve for factor of safety
+	(sigma_1, sigma_2, sigma_3, n_1, n_2, n_3) = calculate_factor_of_safety(
+		theta1=theta1,
+		alpha1=alpha1,
+		alpha2=alpha2,
+		alpha3=alpha3,
+		link_diameter=link_diameter,
+		i1=i1,
+		i2=i2,
+		i3=i3,
+		s_ut=s_ut,
+		s_e=s_e,
+		kf=kf,
 	)
 
 	# Return the calculated angles
@@ -404,6 +509,12 @@ def calculate_results(
 		f43x,
 		f43y,
 		torque,
+		sigma_1,
+		sigma_2,
+		sigma_3,
+		n_1,
+		n_2,
+		n_3,
 	)
 
 # Loops through all possible angles, calculates the results, and aggregates them into arrays
@@ -421,6 +532,7 @@ def analyze_mechanism(
 	link_diameter=0.01,
 	cross_shape="circle",
 	density=2700,
+	s_ut=310,
 	force_start=0,
 	force_end=20,
 	force_mag=100,
@@ -431,7 +543,7 @@ def analyze_mechanism(
 
 	# Output arrays
 	output = []
-	NUM_RESULTS = 42
+	NUM_RESULTS = 48
 	NUM_SCALAR_RESULTS = 8
 
 	# Prepare output array
@@ -447,6 +559,7 @@ def analyze_mechanism(
 			link_diameter=link_diameter,
 			cross_shape=cross_shape,
 			density=density,
+			s_ut=s_ut,
 			force_start=force_start,
 			force_end=force_end,
 			force_mag=force_mag,
