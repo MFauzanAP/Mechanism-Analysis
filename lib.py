@@ -77,24 +77,24 @@ def calculate_acceleration(a, b, c, knife_offset, theta1, omega1, alpha1, theta2
 	# Calculate alphabetic constants
 	A = c * math.sin(theta3)
 	B = b * math.sin(theta2)
-	C = a*(alpha1*math.sin(theta1) + omega1**2*math.cos(theta1)) + b*omega2**2*math.cos(theta2) - c*omega3**2*math.cos(theta3)
+	C = a*(alpha1*math.sin(theta1) + (omega1**2)*math.cos(theta1)) + b*(omega2**2)*math.cos(theta2) - c*(omega3**2)*math.cos(theta3)
 	D = c * math.cos(theta3)
 	E = b * math.cos(theta2)
-	F = a*(alpha1*math.cos(theta1) - omega1**2*math.sin(theta1)) - b*omega2**2*math.sin(theta2) + c*omega3**2*math.sin(theta3)
+	F = a*(alpha1*math.cos(theta1) + (omega1**2)*math.sin(theta1)) - b*(omega2**2)*math.sin(theta2) + c*(omega3**2)*math.sin(theta3)
 
 	# Calculate alpha 2 and 3
 	alpha2 = (C*D - A*F) / (A*E - B*D)
 	alpha3 = (C*E - B*F) / (A*E - B*D)
 
 	# Calculate linear acceleration A, B, and BA
-	accelerationA = (-a*alpha1*math.sin(theta1) - a*omega1**2*math.cos(theta1), a*alpha1*math.cos(theta1) - a*omega1**2*math.sin(theta1))
-	accelerationBA = (-b*alpha2 *math.sin(theta2) - b*omega2**2*math.cos(theta2), b*alpha2*math.cos(theta2) - b*omega2**2*math.sin(theta2))
-	accelerationB = (-c*alpha3*math.sin(theta3) - c*omega3**2*math.cos(theta3), c*alpha3*math.cos(theta3) - c*omega3**2*math.sin(theta3))
+	accelerationA = (-a*alpha1*math.sin(theta1) - a*(omega1**2)*math.cos(theta1), a*alpha1*math.cos(theta1) - a*(omega1**2)*math.sin(theta1))
+	accelerationBA = (-b*alpha2 *math.sin(theta2) - b*(omega2**2)*math.cos(theta2), b*alpha2*math.cos(theta2) - b*(omega2**2)*math.sin(theta2))
+	accelerationB = (-c*alpha3*math.sin(theta3) - c*(omega3**2)*math.cos(theta3), c*alpha3*math.cos(theta3) - c*(omega3**2)*math.sin(theta3))
 
 	# Calculate acceleration at center of gravity
-	cgAccelerationA = (-a*alpha1*math.sin(theta1) - a*omega1**2*math.cos(theta1), a*alpha1*math.cos(theta1) - a*omega1**2*math.sin(theta1))
-	cgAccelerationBA = (-b*alpha2 *math.sin(theta2) - b*omega2**2*math.cos(theta2), b*alpha2*math.cos(theta2) - b*omega2**2*math.sin(theta2))
-	cgAccelerationB = (-c*alpha3*math.sin(theta3) - c*omega3**2*math.cos(theta3), c*alpha3*math.cos(theta3) - c*omega3**2*math.sin(theta3))
+	cgAccelerationA = (-a*alpha1*math.sin(theta1) - a*(omega1**2)*math.cos(theta1), a*alpha1*math.cos(theta1) - a*(omega1**2)*math.sin(theta1))
+	cgAccelerationBA = (-b*alpha2 *math.sin(theta2) - b*(omega2**2)*math.cos(theta2), b*alpha2*math.cos(theta2) - b*(omega2**2)*math.sin(theta2))
+	cgAccelerationB = (-c*alpha3*math.sin(theta3) - c*(omega3**2)*math.cos(theta3), c*alpha3*math.cos(theta3) - c*(omega3**2)*math.sin(theta3))
 
 	# Return the calculated accelerations
 	return (alpha2, alpha3, accelerationA, accelerationB, accelerationBA, cgAccelerationA, cgAccelerationB, cgAccelerationBA)
@@ -162,6 +162,7 @@ def calculate_dynamic(
 	cgAccelerationB,
 	cgAccelerationBA,
 ):
+	
 	# Construct known-values matrix
 	force_mid = (force_start + force_end) / 2
 	force_amp = (force_end - force_start) / 2
@@ -169,10 +170,10 @@ def calculate_dynamic(
 	known_matrix = transpose(matrix(array([
 		m1*cgAccelerationA[0],
 		m1*cgAccelerationA[1],
-		i1*alpha1,
+		i1*math.degrees(alpha1),
 		m2*cgAccelerationBA[0],
 		m2*cgAccelerationBA[1],
-		i2*alpha2,
+		i2*math.degrees(alpha2),
 		m3*cgAccelerationB[0] + f_cut,
 		m3*cgAccelerationB[1],
 		i3*alpha3 - f_cut*math.sin(theta3)*((c+knife_offset)/2),
@@ -204,6 +205,10 @@ def calculate_dynamic(
 		[0,0,0, 0,0,-1, 0,1,0],
 		[0,0,0, 0,r23y,r23x, -r43y,r43x,0],
 	]))
+
+	if round(math.degrees(theta1)) == 338: print(r41x, r41y)
+	if round(math.degrees(theta1)) == 338: print(r41x, r41y)
+	if round(math.degrees(theta1)) == 338: print(cgAccelerationA)
 
 	# Calculate the forces and torques
 	forces_and_torques = inv(coefficient_matrix) * known_matrix
@@ -282,9 +287,9 @@ def calculate_factor_of_safety(
 
 	# Calculate factor of safety for each link
 	# if round(math.degrees(theta1)) == 340: print(s_e, sigma_1, sigma_2, sigma_3)
-	print(m_max_1, m_max_2, m_max_3)
-	print(sigma_max_1, sigma_max_2, sigma_max_3)
-	print(s_e, sigma_1, sigma_2, sigma_3)
+	# print(m_max_1, m_max_2, m_max_3)
+	# print(sigma_max_1, sigma_max_2, sigma_max_3)
+	# print(s_e, sigma_1, sigma_2, sigma_3)
 	n_1 = math.pow((sigma_1 / s_e) + (sigma_1 / s_ut), -1) if sigma_1 > 0 else 0
 	n_2 = math.pow((sigma_2 / s_e) + (sigma_2 / s_ut), -1) if sigma_2 > 0 else 0
 	n_3 = math.pow((sigma_3 / s_e) + (sigma_3 / s_ut), -1) if sigma_3 > 0 else 0
