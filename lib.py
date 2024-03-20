@@ -77,10 +77,10 @@ def calculate_acceleration(a, b, c, knife_offset, theta1, omega1, alpha1, theta2
 	# Calculate alphabetic constants
 	A = c * math.sin(theta3)
 	B = b * math.sin(theta2)
-	C = a*(alpha1*math.sin(theta1) + (omega1**2)*math.cos(theta1)) + b*(omega2**2)*math.cos(theta2) - c*(omega3**2)*math.cos(theta3)
+	C = a*alpha1*math.sin(theta1) + a*(omega1**2)*math.cos(theta1) + b*(omega2**2)*math.cos(theta2) - c*(omega3**2)*math.cos(theta3)
 	D = c * math.cos(theta3)
 	E = b * math.cos(theta2)
-	F = a*(alpha1*math.cos(theta1) + (omega1**2)*math.sin(theta1)) - b*(omega2**2)*math.sin(theta2) + c*(omega3**2)*math.sin(theta3)
+	F = a*alpha1*math.cos(theta1) - a*(omega1**2)*math.sin(theta1) - b*(omega2**2)*math.sin(theta2) + c*(omega3**2)*math.sin(theta3)
 
 	# Calculate alpha 2 and 3
 	alpha2 = (C*D - A*F) / (A*E - B*D)
