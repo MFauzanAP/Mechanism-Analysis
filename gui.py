@@ -25,7 +25,7 @@ class App:
 	DARK_GREY = (50, 50, 50, 255)
 
 	# Sizes
-	LINK_SCALE = 500
+	LINK_SCALE = 1000
 	LINK_THICKNESS = 3
 	ARROW_SCALE = 80
 	ARROW_THICKNESS = 6
@@ -33,11 +33,11 @@ class App:
 	DIMENSION_THICKNESS = 2
 
 	# Link Lengths (m)
-	a = 0.2
-	b = 0.6
-	c = 0.5
-	d = 0.5
-	knife_offset = 0.1
+	a = 0.1
+	b = 0.3
+	c = 0.25
+	d = 0.25
+	knife_offset = 0.0
 
 	# Kinematic Input
 	theta4 = 0				# Ground Angle (deg)
@@ -1279,7 +1279,7 @@ class App:
 
 	# Analysis Settings
 	_arrow_scale = ARROW_SCALE
-	_offset = (WINDOW_WIDTH * 0.25, WINDOW_HEIGHT * 0.55)
+	_offset = (WINDOW_WIDTH * 0.25, WINDOW_HEIGHT * 0.65)
 	_angle_index = 0
 	_all_min_x = 0
 	_all_max_x = 0

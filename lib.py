@@ -107,7 +107,7 @@ def calculate_performance(a, b, c, d, theta1, omega1, omega3):
 	return (transmission_angle, velocity_ratio, mechanical_advantage)
 
 # Calculate link geometric properties
-def calculate_geometric_properties(link_diameter, cross_shape, density, a, b, c):
+def calculate_geometric_properties(link_diameter, cross_shape, density, a, b, c, theta1):
 	link_radius = link_diameter / 2
 
 	# Calculate the mass of each link
@@ -133,6 +133,9 @@ def calculate_geometric_properties(link_diameter, cross_shape, density, a, b, c)
 	# 	i2 = 0.25*m2*link_radius**2 + (1/12)*m2*b**2
 	# 	i3 = 0.25*m3*link_radius**2 + (1/12)*m3*c**2
 	# elif cross_shape == "hollow circle (50%)": pass
+
+	if round(math.degrees(theta1)) == 338: print(m1, m2, m3)
+	if round(math.degrees(theta1)) == 338: print(i1, i2, i3)
 
 	# Return the calculated properties
 	return (m1, m2, m3, cross_area, i1, i2, i3)
@@ -162,22 +165,6 @@ def calculate_dynamic(
 	cgAccelerationB,
 	cgAccelerationBA,
 ):
-	
-	# Construct known-values matrix
-	force_mid = (force_start + force_end) / 2
-	force_amp = (force_end - force_start) / 2
-	f_cut = (abs(math.degrees(theta1) - force_mid) - force_amp) * force_mag / force_amp if math.degrees(theta1) > force_start and math.degrees(theta1) < force_end else 0
-	known_matrix = transpose(matrix(array([
-		m1*cgAccelerationA[0],
-		m1*cgAccelerationA[1],
-		i1*math.degrees(alpha1),
-		m2*cgAccelerationBA[0],
-		m2*cgAccelerationBA[1],
-		i2*math.degrees(alpha2),
-		m3*cgAccelerationB[0] + f_cut,
-		m3*cgAccelerationB[1],
-		i3*alpha3 - f_cut*math.sin(theta3)*((c+knife_offset)/2),
-	])))
 
 	# Construct coefficient matrix
 	r41y = -(a/2)*math.sin(theta1)
@@ -188,6 +175,10 @@ def calculate_dynamic(
 	r12x = -(b/2)*math.cos(theta2)
 	r32y = -r12y
 	r32x = -r12x
+	# r23y = -(c/2)*math.sin(theta3)
+	# r23x = -(c/2)*math.cos(theta3)
+	# r43y = -r23y
+	# r43x = -r23x
 	r23y = ((c+knife_offset)/2)*(1-knife_offset)*math.sin(theta3)
 	r23x = ((c+knife_offset)/2)*(1-knife_offset)*math.cos(theta3)
 	r43y = -((c+knife_offset)/2)*math.sin(theta3)
@@ -195,19 +186,50 @@ def calculate_dynamic(
 	coefficient_matrix = matrix(array([
 		[1,0,1, 0,0,0, 0,0,0],
 		[0,1,0, 1,0,0, 0,0,0],
-		[-r41y,r41x,-r21y, r21x,0,0, 0,0,1],
+		[-r41y,-r41x,r21y, r21x,0,0, 0,0,1],
 
 		[0,0,-1, 0,1,0, 0,0,0],
 		[0,0,0, -1,0,1, 0,0,0],
-		[0,0,r12y, -r12x,-r32y,r32x, 0,0,0],
+		[0,0,-r12y, r12x,-r32y,r32x, 0,0,0],
 
 		[0,0,0, 0,-1,0, 1,0,0],
 		[0,0,0, 0,0,-1, 0,1,0],
-		[0,0,0, 0,r23y,r23x, -r43y,r43x,0],
+		[0,0,0, 0,r23y,r23x, r43y,r43x,0],
 	]))
 
+	# Add small regularizing term to the diagonal to avoid singular matrix
+	coefficient_matrix += 0.01 * matrix(array([
+		[1,0,0, 0,0,0, 0,0,0],
+		[0,1,0, 0,0,0, 0,0,0],
+		[0,0,1, 0,0,0, 0,0,0],
+		[0,0,0, 1,0,0, 0,0,0],
+		[0,0,0, 0,1,0, 0,0,0],
+		[0,0,0, 0,0,1, 0,0,0],
+		[0,0,0, 0,0,0, 1,0,0],
+		[0,0,0, 0,0,0, 0,1,0],
+		[0,0,0, 0,0,0, 0,0,1],
+	]))
+
+	# Construct known-values matrix
+	force_mid = (force_start + force_end) / 2
+	force_amp = (force_end - force_start) / 2
+	f_cut = (abs(math.degrees(theta1) - force_mid) - force_amp) * force_mag / force_amp if math.degrees(theta1) > force_start and math.degrees(theta1) < force_end else 0
+	known_matrix = transpose(matrix(array([
+		m1*cgAccelerationA[0],
+		m1*cgAccelerationA[1],
+		i1*alpha1,
+		m2*cgAccelerationBA[0],
+		m2*cgAccelerationBA[1],
+		i2*alpha2,
+		m3*cgAccelerationB[0] + f_cut,
+		m3*cgAccelerationB[1],
+		i3*alpha3 - f_cut*math.sin(theta3)*((c+knife_offset)/2),
+	])))
+
 	if round(math.degrees(theta1)) == 338: print(r41x, r41y)
-	if round(math.degrees(theta1)) == 338: print(r41x, r41y)
+	if round(math.degrees(theta1)) == 338: print(r12x, r12y)
+	if round(math.degrees(theta1)) == 338: print(r23x, r23y)
+	if round(math.degrees(theta1)) == 338: print(r43x, r43y)
 	if round(math.degrees(theta1)) == 338: print(cgAccelerationA)
 
 	# Calculate the forces and torques
@@ -400,6 +422,7 @@ def calculate_results(
 
 	# Solve for link geometric properties
 	(m1, m2, m3, cross_area, i1, i2, i3) = calculate_geometric_properties(
+		theta1=theta1,
 		link_diameter=link_diameter,
 		cross_shape=cross_shape,
 		density=density,
