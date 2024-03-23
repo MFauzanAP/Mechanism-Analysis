@@ -123,19 +123,6 @@ def calculate_geometric_properties(link_diameter, cross_shape, density, a, b, c,
 	i1 = math.pi * link_radius ** 4
 	i2 = math.pi * link_radius ** 4
 	i3 = math.pi * link_radius ** 4
-	# i1 = 0.25*m1*link_radius**2 + (1/12)*m1*a**2
-	# i2 = 0.25*m2*link_radius**2 + (1/12)*m2*b**2
-	# i3 = 0.25*m3*link_radius**2 + (1/12)*m3*c**2
-	# TODO implement moment of inertia for other shapes
-	# if cross_shape == "square": pass
-	# elif cross_shape == "circle":
-	# 	i1 = 0.25*m1*link_radius**2 + (1/12)*m1*a**2
-	# 	i2 = 0.25*m2*link_radius**2 + (1/12)*m2*b**2
-	# 	i3 = 0.25*m3*link_radius**2 + (1/12)*m3*c**2
-	# elif cross_shape == "hollow circle (50%)": pass
-
-	if round(math.degrees(theta1)) == 179: print(m1)
-	if round(math.degrees(theta1)) == 179: print(i1)
 
 	# Return the calculated properties
 	return (m1, m2, m3, cross_area, i1, i2, i3)
@@ -221,6 +208,7 @@ def calculate_dynamic(
 	
 	# Return results
 	return (
+		f_cut,
 		forces_and_torques[0,0],
 		forces_and_torques[1,0],
 		forces_and_torques[2,0],
@@ -243,16 +231,16 @@ def calculate_strength(
 	s_ut,
 ):
 	s_e_prime = s_ut / 2
-	if s_e_prime > 1400: s_e_prime = 700
+	if s_ut > 1400: s_e_prime = 700
 
 	# Calculate marin factors
 	# TODO make these changeable
-	ka = 3.04 * math.pow(s_ut, -0.217)
-	d_e = 0.808 * link_diameter if cross_shape == "square" else 0.37 * link_diameter
-	kb = 1.51 * math.pow(d_e, -0.157) if d_e < 0.254 else 1.24 * math.pow(d_e, -0.107)
+	ka = 3.04 * (s_ut**-0.217)
+	d_e = 0.37 * link_diameter
+	kb = 1.51 * (d_e**-0.157) if d_e > 0.051 else 1.24 * (d_e**-0.107)
 	kc = 1.0
 	kd = 1.0
-	ke = 1.0
+	ke = 0.62
 
 	# Calculate actual fatigue strength
 	s_e = s_e_prime * ka * kb * kc * kd * ke
@@ -260,12 +248,13 @@ def calculate_strength(
 	# Find stress concentration factor
 	kt = 1.85					# assuming the hole is atleast a third of the diameter of the link
 	roota = 1.24 - (2.25e-3 * s_ut) + (1.6e-6 * s_ut**2) - (4.11e-10 * s_ut**3)
-	kf = 1 + ((kt - 1) / (1 + math.sqrt(math.pow(roota, 2) / (link_diameter / 2))))
+	kf = 1 + ((kt - 1) / (1 + math.sqrt((roota**2) / (link_diameter / 2))))
+	print(ka, kb, kf)
 
 	return (s_e, kf)
 
-# Calculate factor of safety for each link
-def calculate_factor_of_safety(
+# Calculate stresses for each link
+def calculate_stresses(
 	a,
 	b,
 	c,
@@ -279,6 +268,7 @@ def calculate_factor_of_safety(
 	cgAccelerationA,
 	cgAccelerationB,
 	cgAccelerationBA,
+	f_cut,
 	f41x,
 	f41y,
 	f21x,
@@ -318,63 +308,58 @@ def calculate_factor_of_safety(
 
 	# Calculate maximum bending moment for each link (N/m)
 	m_max_1 = (r41x * m1 * 9.81) + (2 * r21x * f21y) - (2 * r21y * f21x)
-	m_max_2 = (i2 * alpha2) + (r12x * m2 * 9.81) + (r12x * m2 * cgAccelerationBA[0])- (r12y * m2 * cgAccelerationBA[1]) + (2 * r32x * f32y) - (2 * r32y * f32x)
-	m_max_3 = (i3 * alpha3) + (r43x * m3 * 9.81) + (r43x * m3 * cgAccelerationB[0]) - (r43y * m3 * cgAccelerationB[1]) + (2 * r23x * f23y) - (2 * r23y * f23x)
-	# m_max_1 = 0
-	# m_1_1 = i1 * alpha1
-	# m_1_2 = m_1_1 + (r41x * m1 * 9.81)
-	# m_1_3 = m_1_2 + ((r21x - r41x) * f21y) - ((r21y - r41y) * f21x)
-	# if abs(m_1_1) > abs(m_max_1): m_max_1 = m_1_1
-	# if abs(m_1_2) > abs(m_max_1): m_max_1 = m_1_2
-	# if abs(m_1_3) > abs(m_max_1): m_max_1 = m_1_3
+	m_max_2 = (i2 * alpha2) + (r12x * m2 * 9.81) - (r12y * m2 * cgAccelerationBA[0]) - (r12x * m2 * cgAccelerationBA[1]) - (2 * r32x * f32y) - (2 * r32y * f32x)
+	m_max_3 = (i3 * alpha3) + (r43x * m3 * 9.81) - (r43y * m3 * cgAccelerationB[0]) - (r43x * m3 * cgAccelerationB[1]) - (c * math.cos(theta3) * f23y) + (c * math.sin(theta3) * f23x) - (2 * r23y * f_cut)
 
-	# m_max_2 = 0
-	# m_2_1 = i2 * alpha2
-	# m_2_2 = m_2_1 + (r12x * m2 * 9.81)
-	# m_2_3 = m_2_2 + (r12x * m2 * cgAccelerationBA[0]) - (r12y * m2 * cgAccelerationBA[1])
-	# m_2_4 = m_2_2 + ((r32x - r12x) * f32y) + ((r32y - r12y) * f32x)
-	# if abs(m_2_1) > abs(m_max_2): m_max_2 = m_2_1
-	# if abs(m_2_2) > abs(m_max_2): m_max_2 = m_2_2
-	# if abs(m_2_3) > abs(m_max_2): m_max_2 = m_2_3
-	# if abs(m_2_4) > abs(m_max_2): m_max_2 = m_2_4
-
-	# m_max_3 = 0
-	# m_3_1 = i3 * alpha3
-	# m_3_2 = m_3_1 + (r43x * m3 * 9.81)
-	# m_3_3 = m_3_2 + (r43x * m3 * cgAccelerationB[0]) - (r43y * m3 * cgAccelerationB[1])
-	# m_3_4 = m_3_2 + ((r23x - r43x) * f23y) + ((r23y - r43y) * f23x)
-	# if abs(m_3_1) > abs(m_max_3): m_max_3 = m_3_1
-	# if abs(m_3_2) > abs(m_max_3): m_max_3 = m_3_2
-	# if abs(m_3_3) > abs(m_max_3): m_max_3 = m_3_3
-	# if abs(m_3_4) > abs(m_max_3): m_max_3 = m_3_4
-
-	# if round(math.degrees(theta1)) == 350: print(m_1_1)
-	# if round(math.degrees(theta1)) == 350: print(m_1_2)
-	# if round(math.degrees(theta1)) == 350: print(m_1_3)
-	# if round(math.degrees(theta1)) == 179: print(m_max_1)
-
-	# Calculate bending stress for each link (Pa)
-	sigma_max_1 = m_max_1 * (link_diameter / 2) / i1
-	sigma_max_2 = m_max_2 * (link_diameter / 2) / i2
-	sigma_max_3 = m_max_3 * (link_diameter / 2) / i3
-
-	# if round(math.degrees(theta1)) == 179: print(sigma_max_1)
+	# Calculate bending stress for each link (MPa)
+	sigma_max_1 = (m_max_1 * (link_diameter / 2) / i1) / 1e6
+	sigma_max_2 = (m_max_2 * (link_diameter / 2) / i2) / 1e6
+	sigma_max_3 = (m_max_3 * (link_diameter / 2) / i3) / 1e6
 
 	# Assuming stress is fluctuating from 0 to max
-	sigma_1 = sigma_max_1 * kf
-	sigma_2 = sigma_max_2 * kf
-	sigma_3 = sigma_max_3 * kf
+	sigma_1 = sigma_max_1 * 1.85
+	sigma_2 = sigma_max_2 * 1.85
+	sigma_3 = sigma_max_3 * 1.85
 
-	# Calculate factor of safety for each link
-	# if round(math.degrees(theta1)) == 340: print(s_e, sigma_1, sigma_2, sigma_3)
-	# print(m_max_1, m_max_2, m_max_3)
-	# print(sigma_max_1, sigma_max_2, sigma_max_3)
-	# print(s_e, sigma_1, sigma_2, sigma_3)
-	n_1 = math.pow((sigma_1 / s_e) + (sigma_1 / s_ut), -1) if sigma_1 > 0 else 0
-	n_2 = math.pow((sigma_2 / s_e) + (sigma_2 / s_ut), -1) if sigma_2 > 0 else 0
-	n_3 = math.pow((sigma_3 / s_e) + (sigma_3 / s_ut), -1) if sigma_3 > 0 else 0
+	return (sigma_1, sigma_2, sigma_3)
 
-	return (sigma_1, sigma_2, sigma_3, n_1, n_2, n_3)
+# Calculate yield and fatigue factors of safety
+def calculate_factors_of_safety(
+	sigma_1,
+	sigma_2,
+	sigma_3,
+	s_ut,
+	s_y,
+	s_e,
+	kf,
+):
+	# Get the minimum and maximum stresses for each link
+	min_1 = min(sigma_1) * kf[0]
+	min_2 = min(sigma_2) * kf[0]
+	min_3 = min(sigma_3) * kf[0]
+	max_1 = max(sigma_1) * kf[0]
+	max_2 = max(sigma_2) * kf[0]
+	max_3 = max(sigma_3) * kf[0]
+
+	# Calculate the yield factor of safety
+	n_yield_1 = s_y / max(abs(min_1), abs(max_1))
+	n_yield_2 = s_y / max(abs(min_2), abs(max_2))
+	n_yield_3 = s_y / max(abs(min_3), abs(max_3))
+
+	# Calculate sigma a and m
+	sigma_a_1 = abs((max_1 - min_1) / 2)
+	sigma_a_2 = abs((max_2 - min_2) / 2)
+	sigma_a_3 = abs((max_3 - min_3) / 2)
+	sigma_m_1 = abs((max_1 + min_1) / 2)
+	sigma_m_2 = abs((max_2 + min_2) / 2)
+	sigma_m_3 = abs((max_3 + min_3) / 2)
+
+	# Calculate fatigue factor of safety
+	n_fatigue_1 = pow((sigma_a_1 / s_e[0]) + (sigma_m_1 / s_ut), -1)
+	n_fatigue_2 = pow((sigma_a_2 / s_e[0]) + (sigma_m_2 / s_ut), -1)
+	n_fatigue_3 = pow((sigma_a_3 / s_e[0]) + (sigma_m_3 / s_ut), -1)
+
+	return (n_yield_1, n_yield_2, n_yield_3, n_fatigue_1, n_fatigue_2, n_fatigue_3)
 
 # Calculate and aggregate position, velocity, and acceleration analysis results for the given input angle
 def calculate_results(
@@ -491,6 +476,7 @@ def calculate_results(
 
 	# Solve for dynamic forces and torque
 	(
+		f_cut,
 		f41x,
 		f41y,
 		f21x,
@@ -537,7 +523,7 @@ def calculate_results(
 	)
 
 	# Solve for factor of safety
-	(sigma_1, sigma_2, sigma_3, n_1, n_2, n_3) = calculate_factor_of_safety(
+	(sigma_1, sigma_2, sigma_3) = calculate_stresses(
 		a=a,
 		b=b,
 		c=c,
@@ -551,6 +537,7 @@ def calculate_results(
 		cgAccelerationA=cgAccelerationA,
 		cgAccelerationB=cgAccelerationB,
 		cgAccelerationBA=cgAccelerationBA,
+		f_cut=f_cut,
 		f41x=f41x,
 		f41y=f41y,
 		f21x=f21x,
@@ -623,9 +610,8 @@ def calculate_results(
 		sigma_1,
 		sigma_2,
 		sigma_3,
-		n_1,
-		n_2,
-		n_3,
+		s_e,
+		kf,
 	)
 
 # Loops through all possible angles, calculates the results, and aggregates them into arrays
@@ -644,6 +630,7 @@ def analyze_mechanism(
 	cross_shape="circle",
 	density=2700,
 	s_ut=310,
+	s_y=275,
 	force_start=0,
 	force_end=20,
 	force_mag=100,
@@ -654,7 +641,7 @@ def analyze_mechanism(
 
 	# Output arrays
 	output = []
-	NUM_RESULTS = 48
+	NUM_RESULTS = 47
 	NUM_SCALAR_RESULTS = 8
 
 	# Prepare output array
@@ -694,6 +681,18 @@ def analyze_mechanism(
 
 			# Append to the output arrays
 			else: output[i].append(results[i])
+
+	# Calculate the factors of safety
+	fos = calculate_factors_of_safety(
+		sigma_1=output[42],
+		sigma_2=output[43],
+		sigma_3=output[44],
+		s_ut=s_ut,
+		s_y=s_y,
+		s_e=output[45],
+		kf=output[46],
+	)
+	for n in fos: output.append(n)
 
 	# Return the results
 	return output

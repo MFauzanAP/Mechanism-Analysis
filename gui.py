@@ -45,10 +45,11 @@ class App:
 	alpha1 = 0				# Motor Acceleration (deg/s^2)
 
 	# Mechanism Properties
-	link_diameter = 0.025	# Diameter of the links (m)
+	link_diameter = 0.03	# Diameter of the links (m)
 	cross_shape = "circle"	# Shape of the cross (square, circle, or hollow circle (50%))
-	density = 7900			# Density of the material (kg/m^3)
-	s_ut = 420				# Ultimate tensile strength of the material (MPa)
+	density = 2700			# Density of the material (kg/m^3)
+	s_ut = 124				# Ultimate tensile strength of the material (MPa)
+	s_y = 55				# Yield strength of the material (MPa)
 	force_start = 300		# Start of the cutting force in terms of the input angle (deg)
 	force_end = 40			# End of the cutting force in terms of the input angle (deg)
 	force_mag = 200			# Magnitude of the cutting force (N)
@@ -129,9 +130,14 @@ class App:
 			sigma_1,
 			sigma_2,
 			sigma_3,
-			n_1,
-			n_2,
-			n_3,
+			s_e,
+			kf,
+			n_yield_1,
+			n_yield_2,
+			n_yield_3,
+			n_fatigue_1,
+			n_fatigue_2,
+			n_fatigue_3,
 		) = analyze_mechanism(
 			a=self.a,
 			b=self.b,
@@ -147,6 +153,7 @@ class App:
 			cross_shape=self.cross_shape,
 			density=self.density,
 			s_ut=self.s_ut,
+			s_y=self.s_y,
 			force_start=self.force_start,
 			force_end=self.force_end,
 			force_mag=self.force_mag,
@@ -219,9 +226,12 @@ class App:
 		self._sigma_1 = sigma_1						# MPa
 		self._sigma_2 = sigma_2						# MPa
 		self._sigma_3 = sigma_3						# MPa
-		self._n_1 = n_1
-		self._n_2 = n_2
-		self._n_3 = n_3
+		self._n_yield_1 = n_yield_1
+		self._n_yield_2 = n_yield_2
+		self._n_yield_3 = n_yield_3
+		self._n_fatigue_1 = n_fatigue_1
+		self._n_fatigue_2 = n_fatigue_2
+		self._n_fatigue_3 = n_fatigue_3
 		self._transmission_angle = transmission_angle
 		self._velocity_ratio = velocity_ratio
 		self._mechanical_advantage = mechanical_advantage
@@ -553,17 +563,9 @@ class App:
 		sigma_2 = round(self._sigma_2[self._angle_index], 2)
 		sigma_3 = round(self._sigma_3[self._angle_index], 2)
 
-		n_1 = round(self._n_1[self._angle_index], 2)
-		n_2 = round(self._n_2[self._angle_index], 2)
-		n_3 = round(self._n_3[self._angle_index], 2)
-
 		dpg.configure_item("sigma_1_value", default_value=f"Max Axial Stress in Input Link: {sigma_1} MPa")
 		dpg.configure_item("sigma_2_value", default_value=f"Max Axial Stress in Link B: {sigma_2} MPa")
 		dpg.configure_item("sigma_3_value", default_value=f"Max Axial Stress in Link C: {sigma_3} MPa")
-
-		dpg.configure_item("n_1_value", default_value=f"Factor of Safety in Input Link: {n_1}")
-		dpg.configure_item("n_2_value", default_value=f"Factor of Safety in Link B: {n_2}")
-		dpg.configure_item("n_3_value", default_value=f"Factor of Safety in Link C: {n_3}")
 
 		# Update the current angle indicators
 		dpg.configure_item("pos_indicator", default_value=self.current_angle)
@@ -587,9 +589,6 @@ class App:
 		dpg.configure_item("sigma_1_indicator", default_value=self.current_angle)
 		dpg.configure_item("sigma_2_indicator", default_value=self.current_angle)
 		dpg.configure_item("sigma_3_indicator", default_value=self.current_angle)
-		dpg.configure_item("n_1_indicator", default_value=self.current_angle)
-		dpg.configure_item("n_2_indicator", default_value=self.current_angle)
-		dpg.configure_item("n_3_indicator", default_value=self.current_angle)
 
 	# Create mechanism drawing window
 	def create_mechanism_drawing(self):
@@ -1269,9 +1268,13 @@ class App:
 			sigma_2 = round(self._sigma_2[self._angle_index], 2)
 			sigma_3 = round(self._sigma_3[self._angle_index], 2)
 
-			n_1 = round(self._n_1[self._angle_index], 2)
-			n_2 = round(self._n_2[self._angle_index], 2)
-			n_3 = round(self._n_3[self._angle_index], 2)
+			n_yield_1 = round(self._n_yield_1, 2)
+			n_yield_2 = round(self._n_yield_2, 2)
+			n_yield_3 = round(self._n_yield_3, 2)
+
+			n_fatigue_1 = round(self._n_fatigue_1, 2)
+			n_fatigue_2 = round(self._n_fatigue_2, 2)
+			n_fatigue_3 = round(self._n_fatigue_3, 2)
 
 			dpg.add_tab_bar(label="Stress Analysis", tag="stress_tabs")
 			dpg.add_tab(label="Input Link A", tag="sigma_1_tab", parent="stress_tabs")
@@ -1279,6 +1282,9 @@ class App:
 			dpg.add_tab(label="Link C", tag="sigma_3_tab", parent="stress_tabs")
 
 			with dpg.group(parent="sigma_1_tab"):
+				dpg.add_text(f"Yield Factor of Safety in Input Link: {n_yield_1}", tag="n_yield_1_value")
+				dpg.add_text(f"Fatigue Factor of Safety in Input Link: {n_fatigue_1}", tag="n_fatigue_1_value")
+
 				dpg.add_text(f"Max Axial Stress in Input Link: {sigma_1} MPa", tag="sigma_1_value")
 				dpg.add_text(f"Range of Max Axial Stress in Input Link: {round(min(self._sigma_1), 2)} to {round(max(self._sigma_1), 2)} MPa")
 
@@ -1290,18 +1296,10 @@ class App:
 					dpg.add_line_series(self._theta1, self._sigma_1, label="Max Axial Stress", parent="sigma_1_y_axis")
 					dpg.add_drag_line(label="Current Angle", tag="sigma_1_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
-				dpg.add_text(f"Factor of Safety in Input Link: {n_1}", tag="n_1_value")
-				dpg.add_text(f"Range of Factor of Safety in Input Link: {round(min(self._n_1), 2)} to {round(max(self._n_1), 2)}")
-
-				with dpg.plot():
-					dpg.add_plot_legend()
-					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
-					dpg.set_axis_limits(dpg.last_item(), 0, 360)
-					dpg.add_plot_axis(dpg.mvYAxis, label="Factor of Safety in Input Link", tag="n_1_y_axis")
-					dpg.add_line_series(self._theta1, self._n_1, label="Factor of Safety", parent="n_1_y_axis")
-					dpg.add_drag_line(label="Current Angle", tag="n_1_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
-
 			with dpg.group(parent="sigma_2_tab"):
+				dpg.add_text(f"Yield Factor of Safety in Link B: {n_yield_2}", tag="n_yield_2_value")
+				dpg.add_text(f"Fatigue Factor of Safety in Link B: {n_fatigue_2}", tag="n_fatigue_2_value")
+
 				dpg.add_text(f"Max Axial Stress in Link B: {sigma_2} MPa", tag="sigma_2_value")
 				dpg.add_text(f"Range of Max Axial Stress in Link B: {round(min(self._sigma_2), 2)} to {round(max(self._sigma_2), 2)} MPa")
 
@@ -1313,18 +1311,10 @@ class App:
 					dpg.add_line_series(self._theta1, self._sigma_2, label="Max Axial Stress", parent="sigma_2_y_axis")
 					dpg.add_drag_line(label="Current Angle", tag="sigma_2_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
-				dpg.add_text(f"Factor of Safety in Link B: {n_2}", tag="n_2_value")
-				dpg.add_text(f"Range of Factor of Safety in Link B: {round(min(self._n_2), 2)} to {round(max(self._n_2), 2)}")
-
-				with dpg.plot():
-					dpg.add_plot_legend()
-					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
-					dpg.set_axis_limits(dpg.last_item(), 0, 360)
-					dpg.add_plot_axis(dpg.mvYAxis, label="Factor of Safety in Link B", tag="n_2_y_axis")
-					dpg.add_line_series(self._theta1, self._n_2, label="Factor of Safety", parent="n_2_y_axis")
-					dpg.add_drag_line(label="Current Angle", tag="n_2_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
-
 			with dpg.group(parent="sigma_3_tab"):
+				dpg.add_text(f"Yield Factor of Safety in Link C: {n_yield_3}", tag="n_yield_3_value")
+				dpg.add_text(f"Fatigue Factor of Safety in Link C: {n_fatigue_3}", tag="n_fatigue_3_value")
+
 				dpg.add_text(f"Max Axial Stress in Link C: {sigma_3} MPa", tag="sigma_3_value")
 				dpg.add_text(f"Range of Max Axial Stress in Link C: {round(min(self._sigma_3), 2)} to {round(max(self._sigma_3), 2)} MPa")
 
@@ -1335,17 +1325,6 @@ class App:
 					dpg.add_plot_axis(dpg.mvYAxis, label="Max Axial Stress in Link C (MPa)", tag="sigma_3_y_axis")
 					dpg.add_line_series(self._theta1, self._sigma_3, label="Max Axial Stress", parent="sigma_3_y_axis")
 					dpg.add_drag_line(label="Current Angle", tag="sigma_3_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
-
-				dpg.add_text(f"Factor of Safety in Link C: {n_3}", tag="n_3_value")
-				dpg.add_text(f"Range of Factor of Safety in Link C: {round(min(self._n_3), 2)} to {round(max(self._n_3), 2)}")
-
-				with dpg.plot():
-					dpg.add_plot_legend()
-					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
-					dpg.set_axis_limits(dpg.last_item(), 0, 360)
-					dpg.add_plot_axis(dpg.mvYAxis, label="Factor of Safety in Link C", tag="n_3_y_axis")
-					dpg.add_line_series(self._theta1, self._n_3, label="Factor of Safety", parent="n_3_y_axis")
-					dpg.add_drag_line(label="Current Angle", tag="n_3_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
 	# Analysis Settings
 	_arrow_scale = ARROW_SCALE
