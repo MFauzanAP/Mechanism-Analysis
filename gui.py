@@ -37,7 +37,7 @@ class App:
 	b = 0.3
 	c = 0.25
 	d = 0.25
-	knife_offset = 0.0
+	knife_offset = 0.05
 
 	# Kinematic Input
 	theta4 = 0				# Ground Angle (deg)
@@ -48,9 +48,9 @@ class App:
 	link_diameter = 0.05	# Diameter of the links (m)
 	cross_shape = "circle"	# Shape of the cross (square, circle, or hollow circle (50%))
 	density = 2700			# Density of the material (kg/m^3)
-	force_start = 338		# Start of the cutting force in terms of the input angle (deg)
-	force_end = 358			# End of the cutting force in terms of the input angle (deg)
-	force_mag = 20			# Magnitude of the cutting force (N)
+	force_start = 300		# Start of the cutting force in terms of the input angle (deg)
+	force_end = 40			# End of the cutting force in terms of the input angle (deg)
+	force_mag = 60			# Magnitude of the cutting force (N)
 
 	# Analysis Settings
 	current_angle = 338		# Current angle of the input link

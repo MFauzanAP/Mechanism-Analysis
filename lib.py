@@ -211,9 +211,16 @@ def calculate_dynamic(
 	]))
 
 	# Construct known-values matrix
-	force_mid = (force_start + force_end) / 2
-	force_amp = (force_end - force_start) / 2
-	f_cut = (abs(math.degrees(theta1) - force_mid) - force_amp) * force_mag / force_amp if math.degrees(theta1) > force_start and math.degrees(theta1) < force_end else 0
+	force_mid = (force_start + force_end) / 2 if force_start < force_end else (force_start + force_end + 360) / 2
+	force_amp = (force_end - force_start) / 2 if force_start < force_end else (force_end - force_start + 360) / 2
+	f_cut = 0
+	if force_start < force_end:
+		if math.degrees(theta1) > force_start and math.degrees(theta1) < force_end:
+			f_cut = (abs(math.degrees(theta1) - force_mid) - force_amp) * force_mag / force_amp
+	else:
+		if math.degrees(theta1) > force_start or math.degrees(theta1) < force_end:
+			clamped_theta = math.degrees(theta1) if math.degrees(theta1) > force_start else math.degrees(theta1) + 360
+			f_cut = (abs(clamped_theta - force_mid) - force_amp) * force_mag / force_amp
 	known_matrix = transpose(matrix(array([
 		-m1*cgAccelerationA[0],
 		-m1*cgAccelerationA[1] + m1*9.81,
