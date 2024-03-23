@@ -92,9 +92,9 @@ def calculate_acceleration(a, b, c, knife_offset, theta1, omega1, alpha1, theta2
 	accelerationB = (-c*alpha3*math.sin(theta3) - c*(omega3**2)*math.cos(theta3), c*alpha3*math.cos(theta3) - c*(omega3**2)*math.sin(theta3))
 
 	# Calculate acceleration at center of gravity
-	cgAccelerationA = (-a*alpha1*math.sin(theta1) - a*(omega1**2)*math.cos(theta1), a*alpha1*math.cos(theta1) - a*(omega1**2)*math.sin(theta1))
-	cgAccelerationBA = (-b*alpha2 *math.sin(theta2) - b*(omega2**2)*math.cos(theta2), b*alpha2*math.cos(theta2) - b*(omega2**2)*math.sin(theta2))
-	cgAccelerationB = (-c*alpha3*math.sin(theta3) - c*(omega3**2)*math.cos(theta3), c*alpha3*math.cos(theta3) - c*(omega3**2)*math.sin(theta3))
+	cgAccelerationA = (-0.5*a*alpha1*math.sin(theta1) - 0.5*a*(omega1**2)*math.cos(theta1), 0.5*a*alpha1*math.cos(theta1) - 0.5*a*(omega1**2)*math.sin(theta1))
+	cgAccelerationBA = (-0.5*b*alpha2 *math.sin(theta2) - 0.5*b*(omega2**2)*math.cos(theta2), 0.5*b*alpha2*math.cos(theta2) - 0.5*b*(omega2**2)*math.sin(theta2))
+	cgAccelerationB = (-0.5*c*alpha3*math.sin(theta3) - 0.5*c*(omega3**2)*math.cos(theta3), 0.5*c*alpha3*math.cos(theta3) - 0.5*c*(omega3**2)*math.sin(theta3))
 
 	# Return the calculated accelerations
 	return (alpha2, alpha3, accelerationA, accelerationB, accelerationBA, cgAccelerationA, cgAccelerationB, cgAccelerationBA)
@@ -186,15 +186,15 @@ def calculate_dynamic(
 	coefficient_matrix = matrix(array([
 		[1,0,1, 0,0,0, 0,0,0],
 		[0,1,0, 1,0,0, 0,0,0],
-		[-r41y,-r41x,r21y, r21x,0,0, 0,0,1],
+		[-r41y,r41x,-r21y, r21x,0,0, 0,0,1],
 
 		[0,0,-1, 0,1,0, 0,0,0],
 		[0,0,0, -1,0,1, 0,0,0],
-		[0,0,-r12y, r12x,-r32y,r32x, 0,0,0],
+		[0,0,r12y, -r12x,-r32y,r32x, 0,0,0],
 
 		[0,0,0, 0,-1,0, 1,0,0],
 		[0,0,0, 0,0,-1, 0,1,0],
-		[0,0,0, 0,r23y,r23x, r43y,r43x,0],
+		[0,0,0, 0,r23y,-r23x, -r43y,r43x,0],
 	]))
 
 	# Add small regularizing term to the diagonal to avoid singular matrix
@@ -215,15 +215,15 @@ def calculate_dynamic(
 	force_amp = (force_end - force_start) / 2
 	f_cut = (abs(math.degrees(theta1) - force_mid) - force_amp) * force_mag / force_amp if math.degrees(theta1) > force_start and math.degrees(theta1) < force_end else 0
 	known_matrix = transpose(matrix(array([
-		m1*cgAccelerationA[0],
-		m1*cgAccelerationA[1],
-		i1*alpha1,
-		m2*cgAccelerationBA[0],
-		m2*cgAccelerationBA[1],
-		i2*alpha2,
-		m3*cgAccelerationB[0] + f_cut,
-		m3*cgAccelerationB[1],
-		i3*alpha3 - f_cut*math.sin(theta3)*((c+knife_offset)/2),
+		-m1*cgAccelerationA[0],
+		-m1*cgAccelerationA[1] + m1*9.81,
+		-i1*alpha1,
+		-m2*cgAccelerationBA[0],
+		-m2*cgAccelerationBA[1] + m2*9.81,
+		-i2*alpha2,
+		-m3*cgAccelerationB[0] - f_cut,
+		-m3*cgAccelerationB[1] + m3*9.81,
+		-i3*alpha3 + f_cut*math.sin(theta3)*((c+knife_offset)/2),
 	])))
 
 	if round(math.degrees(theta1)) == 338: print(r41x, r41y)
@@ -237,19 +237,19 @@ def calculate_dynamic(
 	
 	# Return results
 	return (
-		-1*forces_and_torques[0,0],
-		-1*forces_and_torques[1,0],
+		forces_and_torques[0,0],
+		forces_and_torques[1,0],
+		forces_and_torques[2,0],
+		forces_and_torques[3,0],
 		-1*forces_and_torques[2,0],
 		-1*forces_and_torques[3,0],
-		-1*-1*forces_and_torques[2,0],
-		-1*-1*forces_and_torques[3,0],
+		forces_and_torques[4,0],
+		forces_and_torques[5,0],
 		-1*forces_and_torques[4,0],
 		-1*forces_and_torques[5,0],
-		-1*-1*forces_and_torques[4,0],
-		-1*-1*forces_and_torques[5,0],
-		-1*forces_and_torques[6,0],
-		-1*forces_and_torques[7,0],
-		-1*forces_and_torques[8,0],
+		forces_and_torques[6,0],
+		forces_and_torques[7,0],
+		forces_and_torques[8,0],
 	)
 
 # Calculate mechanism strength properties
