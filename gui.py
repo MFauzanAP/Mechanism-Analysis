@@ -45,15 +45,16 @@ class App:
 	alpha1 = 0				# Motor Acceleration (deg/s^2)
 
 	# Mechanism Properties
-	link_diameter = 0.05	# Diameter of the links (m)
+	link_diameter = 0.025	# Diameter of the links (m)
 	cross_shape = "circle"	# Shape of the cross (square, circle, or hollow circle (50%))
-	density = 2700			# Density of the material (kg/m^3)
+	density = 7900			# Density of the material (kg/m^3)
+	s_ut = 420				# Ultimate tensile strength of the material (MPa)
 	force_start = 300		# Start of the cutting force in terms of the input angle (deg)
 	force_end = 40			# End of the cutting force in terms of the input angle (deg)
-	force_mag = 60			# Magnitude of the cutting force (N)
+	force_mag = 200			# Magnitude of the cutting force (N)
 
 	# Analysis Settings
-	current_angle = 338		# Current angle of the input link
+	current_angle = 179		# Current angle of the input link
 	resolution = 360
 	position = "crossed"
 	arrow = "force"
@@ -145,6 +146,7 @@ class App:
 			link_diameter=self.link_diameter,
 			cross_shape=self.cross_shape,
 			density=self.density,
+			s_ut=self.s_ut,
 			force_start=self.force_start,
 			force_end=self.force_end,
 			force_mag=self.force_mag,
@@ -546,6 +548,23 @@ class App:
 
 		dpg.configure_item("torque_value", default_value=f"Torque: {torque} Nm")
 
+		# Update stress values
+		sigma_1 = round(self._sigma_1[self._angle_index], 2)
+		sigma_2 = round(self._sigma_2[self._angle_index], 2)
+		sigma_3 = round(self._sigma_3[self._angle_index], 2)
+
+		n_1 = round(self._n_1[self._angle_index], 2)
+		n_2 = round(self._n_2[self._angle_index], 2)
+		n_3 = round(self._n_3[self._angle_index], 2)
+
+		dpg.configure_item("sigma_1_value", default_value=f"Max Axial Stress in Input Link: {sigma_1} MPa")
+		dpg.configure_item("sigma_2_value", default_value=f"Max Axial Stress in Link B: {sigma_2} MPa")
+		dpg.configure_item("sigma_3_value", default_value=f"Max Axial Stress in Link C: {sigma_3} MPa")
+
+		dpg.configure_item("n_1_value", default_value=f"Factor of Safety in Input Link: {n_1}")
+		dpg.configure_item("n_2_value", default_value=f"Factor of Safety in Link B: {n_2}")
+		dpg.configure_item("n_3_value", default_value=f"Factor of Safety in Link C: {n_3}")
+
 		# Update the current angle indicators
 		dpg.configure_item("pos_indicator", default_value=self.current_angle)
 		dpg.configure_item("angular_velocity_indicator", default_value=self.current_angle)
@@ -565,6 +584,12 @@ class App:
 		dpg.configure_item("force_b_indicator", default_value=self.current_angle)
 		dpg.configure_item("force_c_indicator", default_value=self.current_angle)
 		dpg.configure_item("torque_indicator", default_value=self.current_angle)
+		dpg.configure_item("sigma_1_indicator", default_value=self.current_angle)
+		dpg.configure_item("sigma_2_indicator", default_value=self.current_angle)
+		dpg.configure_item("sigma_3_indicator", default_value=self.current_angle)
+		dpg.configure_item("n_1_indicator", default_value=self.current_angle)
+		dpg.configure_item("n_2_indicator", default_value=self.current_angle)
+		dpg.configure_item("n_3_indicator", default_value=self.current_angle)
 
 	# Create mechanism drawing window
 	def create_mechanism_drawing(self):
@@ -1120,7 +1145,7 @@ class App:
 			dpg.add_text(f"Force from link C to output in Y: {f43y} N", tag="ind_f43y_value")
 			dpg.add_text(f"Magnitude of force from link C to output: {round(magnitude((f43x, f43y)), 2)} N", tag="ind_f43_mag")
 
-			with dpg.plot():
+			with dpg.plot(height=500):
 				dpg.add_plot_legend()
 				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
 				dpg.set_axis_limits(dpg.last_item(), 0, 360)
@@ -1223,7 +1248,7 @@ class App:
 					dpg.add_line_series(self._theta1, [ magnitude(f) for f in zip(self._f43x, self._f43y) ], label="From Ground Magnitude", parent="force_c_y_axis")
 					dpg.add_drag_line(label="Current Angle", tag="force_c_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
-			dpg.add_collapsing_header(label="Motor Torque", tag="torque_collapsing", parent="dynamic_analysis", default_open=True)
+			dpg.add_collapsing_header(label="Motor Torque", tag="torque_collapsing", parent="dynamic_analysis")
 			with dpg.group(parent="torque_collapsing"):
 				dpg.add_text(f"Torque: {torque} Nm", tag="torque_value")
 				dpg.add_text(f"Range of torque: {round(min(self._torque), 2)} to {round(max(self._torque), 2)} Nm")
@@ -1244,38 +1269,83 @@ class App:
 			sigma_2 = round(self._sigma_2[self._angle_index], 2)
 			sigma_3 = round(self._sigma_3[self._angle_index], 2)
 
-			dpg.add_text(f"Max Stress in Input Link: {sigma_1} MPa", tag="sigma_1_value")
-			dpg.add_text(f"Range of Max Stress in Input Link: {round(min(self._sigma_1), 2)} to {round(max(self._sigma_1), 2)} MPa")
+			n_1 = round(self._n_1[self._angle_index], 2)
+			n_2 = round(self._n_2[self._angle_index], 2)
+			n_3 = round(self._n_3[self._angle_index], 2)
 
-			with dpg.plot():
-				dpg.add_plot_legend()
-				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
-				dpg.set_axis_limits(dpg.last_item(), 0, 360)
-				dpg.add_plot_axis(dpg.mvYAxis, label="Max Stress in Input Link (MPa)", tag="stress_y_axis")
-				dpg.add_line_series(self._theta1, self._sigma_1, label="Max Stress", parent="stress_y_axis")
-				dpg.add_drag_line(label="Current Angle", tag="stress_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+			dpg.add_tab_bar(label="Stress Analysis", tag="stress_tabs")
+			dpg.add_tab(label="Input Link A", tag="sigma_1_tab", parent="stress_tabs")
+			dpg.add_tab(label="Link B", tag="sigma_2_tab", parent="stress_tabs")
+			dpg.add_tab(label="Link C", tag="sigma_3_tab", parent="stress_tabs")
 
-			dpg.add_text(f"Max Stress: {sigma_2} MPa", tag="sigma_2_value")
-			dpg.add_text(f"Range of Max Stress: {round(min(self._sigma_2), 2)} to {round(max(self._sigma_2), 2)} MPa")
+			with dpg.group(parent="sigma_1_tab"):
+				dpg.add_text(f"Max Axial Stress in Input Link: {sigma_1} MPa", tag="sigma_1_value")
+				dpg.add_text(f"Range of Max Axial Stress in Input Link: {round(min(self._sigma_1), 2)} to {round(max(self._sigma_1), 2)} MPa")
 
-			with dpg.plot():
-				dpg.add_plot_legend()
-				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
-				dpg.set_axis_limits(dpg.last_item(), 0, 360)
-				dpg.add_plot_axis(dpg.mvYAxis, label="Min Stress (MPa)", tag="min_stress_y_axis")
-				dpg.add_line_series(self._theta1, self._sigma_2, label="Min Stress", parent="min_stress_y_axis")
-				dpg.add_drag_line(label="Current Angle", tag="min_stress_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+				with dpg.plot():
+					dpg.add_plot_legend()
+					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+					dpg.set_axis_limits(dpg.last_item(), 0, 360)
+					dpg.add_plot_axis(dpg.mvYAxis, label="Max Axial Stress in Input Link (MPa)", tag="sigma_1_y_axis")
+					dpg.add_line_series(self._theta1, self._sigma_1, label="Max Axial Stress", parent="sigma_1_y_axis")
+					dpg.add_drag_line(label="Current Angle", tag="sigma_1_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
-			dpg.add_text(f"Max Stress: {sigma_3} MPa", tag="sigma_3_value")
-			dpg.add_text(f"Range of Max Stress: {round(min(self._sigma_3), 2)} to {round(max(self._sigma_3), 2)} MPa")
+				dpg.add_text(f"Factor of Safety in Input Link: {n_1}", tag="n_1_value")
+				dpg.add_text(f"Range of Factor of Safety in Input Link: {round(min(self._n_1), 2)} to {round(max(self._n_1), 2)}")
 
-			with dpg.plot():
-				dpg.add_plot_legend()
-				dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
-				dpg.set_axis_limits(dpg.last_item(), 0, 360)
-				dpg.add_plot_axis(dpg.mvYAxis, label="Max Stress (MPa)", tag="max_stress_y_axis")
-				dpg.add_line_series(self._theta1, self._sigma_3, label="Max Stress", parent="max_stress_y_axis")
-				dpg.add_drag_line(label="Current Angle", tag="max_stress_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+				with dpg.plot():
+					dpg.add_plot_legend()
+					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+					dpg.set_axis_limits(dpg.last_item(), 0, 360)
+					dpg.add_plot_axis(dpg.mvYAxis, label="Factor of Safety in Input Link", tag="n_1_y_axis")
+					dpg.add_line_series(self._theta1, self._n_1, label="Factor of Safety", parent="n_1_y_axis")
+					dpg.add_drag_line(label="Current Angle", tag="n_1_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+			with dpg.group(parent="sigma_2_tab"):
+				dpg.add_text(f"Max Axial Stress in Link B: {sigma_2} MPa", tag="sigma_2_value")
+				dpg.add_text(f"Range of Max Axial Stress in Link B: {round(min(self._sigma_2), 2)} to {round(max(self._sigma_2), 2)} MPa")
+
+				with dpg.plot():
+					dpg.add_plot_legend()
+					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+					dpg.set_axis_limits(dpg.last_item(), 0, 360)
+					dpg.add_plot_axis(dpg.mvYAxis, label="Max Axial Stress in Link B (MPa)", tag="sigma_2_y_axis")
+					dpg.add_line_series(self._theta1, self._sigma_2, label="Max Axial Stress", parent="sigma_2_y_axis")
+					dpg.add_drag_line(label="Current Angle", tag="sigma_2_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+				dpg.add_text(f"Factor of Safety in Link B: {n_2}", tag="n_2_value")
+				dpg.add_text(f"Range of Factor of Safety in Link B: {round(min(self._n_2), 2)} to {round(max(self._n_2), 2)}")
+
+				with dpg.plot():
+					dpg.add_plot_legend()
+					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+					dpg.set_axis_limits(dpg.last_item(), 0, 360)
+					dpg.add_plot_axis(dpg.mvYAxis, label="Factor of Safety in Link B", tag="n_2_y_axis")
+					dpg.add_line_series(self._theta1, self._n_2, label="Factor of Safety", parent="n_2_y_axis")
+					dpg.add_drag_line(label="Current Angle", tag="n_2_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+			with dpg.group(parent="sigma_3_tab"):
+				dpg.add_text(f"Max Axial Stress in Link C: {sigma_3} MPa", tag="sigma_3_value")
+				dpg.add_text(f"Range of Max Axial Stress in Link C: {round(min(self._sigma_3), 2)} to {round(max(self._sigma_3), 2)} MPa")
+
+				with dpg.plot():
+					dpg.add_plot_legend()
+					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+					dpg.set_axis_limits(dpg.last_item(), 0, 360)
+					dpg.add_plot_axis(dpg.mvYAxis, label="Max Axial Stress in Link C (MPa)", tag="sigma_3_y_axis")
+					dpg.add_line_series(self._theta1, self._sigma_3, label="Max Axial Stress", parent="sigma_3_y_axis")
+					dpg.add_drag_line(label="Current Angle", tag="sigma_3_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
+
+				dpg.add_text(f"Factor of Safety in Link C: {n_3}", tag="n_3_value")
+				dpg.add_text(f"Range of Factor of Safety in Link C: {round(min(self._n_3), 2)} to {round(max(self._n_3), 2)}")
+
+				with dpg.plot():
+					dpg.add_plot_legend()
+					dpg.add_plot_axis(dpg.mvXAxis, label="Input Angle (degree)")
+					dpg.set_axis_limits(dpg.last_item(), 0, 360)
+					dpg.add_plot_axis(dpg.mvYAxis, label="Factor of Safety in Link C", tag="n_3_y_axis")
+					dpg.add_line_series(self._theta1, self._n_3, label="Factor of Safety", parent="n_3_y_axis")
+					dpg.add_drag_line(label="Current Angle", tag="n_3_indicator", default_value=self.current_angle, callback=self.handle_drag_pos_indicator)
 
 	# Analysis Settings
 	_arrow_scale = ARROW_SCALE

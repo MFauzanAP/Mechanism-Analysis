@@ -120,12 +120,12 @@ def calculate_geometric_properties(link_diameter, cross_shape, density, a, b, c,
 	m3 = density * cross_area * c
 
 	# Calculate the moment of inertia of each link
-	i1 = 0
-	i2 = 0
-	i3 = 0
-	i1 = 0.25*m1*link_radius**2 + (1/12)*m1*a**2
-	i2 = 0.25*m2*link_radius**2 + (1/12)*m2*b**2
-	i3 = 0.25*m3*link_radius**2 + (1/12)*m3*c**2
+	i1 = math.pi * link_radius ** 4
+	i2 = math.pi * link_radius ** 4
+	i3 = math.pi * link_radius ** 4
+	# i1 = 0.25*m1*link_radius**2 + (1/12)*m1*a**2
+	# i2 = 0.25*m2*link_radius**2 + (1/12)*m2*b**2
+	# i3 = 0.25*m3*link_radius**2 + (1/12)*m3*c**2
 	# TODO implement moment of inertia for other shapes
 	# if cross_shape == "square": pass
 	# elif cross_shape == "circle":
@@ -134,8 +134,8 @@ def calculate_geometric_properties(link_diameter, cross_shape, density, a, b, c,
 	# 	i3 = 0.25*m3*link_radius**2 + (1/12)*m3*c**2
 	# elif cross_shape == "hollow circle (50%)": pass
 
-	if round(math.degrees(theta1)) == 338: print(m1, m2, m3)
-	if round(math.degrees(theta1)) == 338: print(i1, i2, i3)
+	if round(math.degrees(theta1)) == 179: print(m1)
+	if round(math.degrees(theta1)) == 179: print(i1)
 
 	# Return the calculated properties
 	return (m1, m2, m3, cross_area, i1, i2, i3)
@@ -175,10 +175,6 @@ def calculate_dynamic(
 	r12x = -(b/2)*math.cos(theta2)
 	r32y = -r12y
 	r32x = -r12x
-	# r23y = -(c/2)*math.sin(theta3)
-	# r23x = -(c/2)*math.cos(theta3)
-	# r43y = -r23y
-	# r43x = -r23x
 	r23y = ((c+knife_offset)/2)*(1-knife_offset)*math.sin(theta3)
 	r23x = ((c+knife_offset)/2)*(1-knife_offset)*math.cos(theta3)
 	r43y = -((c+knife_offset)/2)*math.sin(theta3)
@@ -195,19 +191,6 @@ def calculate_dynamic(
 		[0,0,0, 0,-1,0, 1,0,0],
 		[0,0,0, 0,0,-1, 0,1,0],
 		[0,0,0, 0,r23y,-r23x, -r43y,r43x,0],
-	]))
-
-	# Add small regularizing term to the diagonal to avoid singular matrix
-	coefficient_matrix += 0.01 * matrix(array([
-		[1,0,0, 0,0,0, 0,0,0],
-		[0,1,0, 0,0,0, 0,0,0],
-		[0,0,1, 0,0,0, 0,0,0],
-		[0,0,0, 1,0,0, 0,0,0],
-		[0,0,0, 0,1,0, 0,0,0],
-		[0,0,0, 0,0,1, 0,0,0],
-		[0,0,0, 0,0,0, 1,0,0],
-		[0,0,0, 0,0,0, 0,1,0],
-		[0,0,0, 0,0,0, 0,0,1],
 	]))
 
 	# Construct known-values matrix
@@ -232,12 +215,6 @@ def calculate_dynamic(
 		-m3*cgAccelerationB[1] + m3*9.81,
 		-i3*alpha3 + f_cut*math.sin(theta3)*((c+knife_offset)/2),
 	])))
-
-	if round(math.degrees(theta1)) == 338: print(r41x, r41y)
-	if round(math.degrees(theta1)) == 338: print(r12x, r12y)
-	if round(math.degrees(theta1)) == 338: print(r23x, r23y)
-	if round(math.degrees(theta1)) == 338: print(r43x, r43y)
-	if round(math.degrees(theta1)) == 338: print(cgAccelerationA)
 
 	# Calculate the forces and torques
 	forces_and_torques = inv(coefficient_matrix) * known_matrix
@@ -289,11 +266,36 @@ def calculate_strength(
 
 # Calculate factor of safety for each link
 def calculate_factor_of_safety(
+	a,
+	b,
+	c,
+	knife_offset,
 	theta1,
+	theta2,
+	theta3,
 	alpha1,
 	alpha2,
 	alpha3,
+	cgAccelerationA,
+	cgAccelerationB,
+	cgAccelerationBA,
+	f41x,
+	f41y,
+	f21x,
+	f21y,
+	f12x,
+	f12y,
+	f32x,
+	f32y,
+	f23x,
+	f23y,
+	f43x,
+	f43y,
+	torque,
 	link_diameter,
+	m1,
+	m2,
+	m3,
 	i1,
 	i2,
 	i3,
@@ -301,13 +303,62 @@ def calculate_factor_of_safety(
 	s_e,
 	kf,
 ):
-	m_max_1 = i1 * alpha1
-	m_max_2 = i2 * alpha2
-	m_max_3 = i3 * alpha3
+	r41y = -(a/2)*math.sin(theta1)
+	r41x = -(a/2)*math.cos(theta1)
+	r21y = -r41y
+	r21x = -r41x
+	r12y = -(b/2)*math.sin(theta2)
+	r12x = -(b/2)*math.cos(theta2)
+	r32y = -r12y
+	r32x = -r12x
+	r23y = ((c+knife_offset)/2)*(1-knife_offset)*math.sin(theta3)
+	r23x = ((c+knife_offset)/2)*(1-knife_offset)*math.cos(theta3)
+	r43y = -((c+knife_offset)/2)*math.sin(theta3)
+	r43x = -((c+knife_offset)/2)*math.cos(theta3)
 
+	# Calculate maximum bending moment for each link (N/m)
+	m_max_1 = (r41x * m1 * 9.81) + (2 * r21x * f21y) - (2 * r21y * f21x)
+	m_max_2 = (i2 * alpha2) + (r12x * m2 * 9.81) + (r12x * m2 * cgAccelerationBA[0])- (r12y * m2 * cgAccelerationBA[1]) + (2 * r32x * f32y) - (2 * r32y * f32x)
+	m_max_3 = (i3 * alpha3) + (r43x * m3 * 9.81) + (r43x * m3 * cgAccelerationB[0]) - (r43y * m3 * cgAccelerationB[1]) + (2 * r23x * f23y) - (2 * r23y * f23x)
+	# m_max_1 = 0
+	# m_1_1 = i1 * alpha1
+	# m_1_2 = m_1_1 + (r41x * m1 * 9.81)
+	# m_1_3 = m_1_2 + ((r21x - r41x) * f21y) - ((r21y - r41y) * f21x)
+	# if abs(m_1_1) > abs(m_max_1): m_max_1 = m_1_1
+	# if abs(m_1_2) > abs(m_max_1): m_max_1 = m_1_2
+	# if abs(m_1_3) > abs(m_max_1): m_max_1 = m_1_3
+
+	# m_max_2 = 0
+	# m_2_1 = i2 * alpha2
+	# m_2_2 = m_2_1 + (r12x * m2 * 9.81)
+	# m_2_3 = m_2_2 + (r12x * m2 * cgAccelerationBA[0]) - (r12y * m2 * cgAccelerationBA[1])
+	# m_2_4 = m_2_2 + ((r32x - r12x) * f32y) + ((r32y - r12y) * f32x)
+	# if abs(m_2_1) > abs(m_max_2): m_max_2 = m_2_1
+	# if abs(m_2_2) > abs(m_max_2): m_max_2 = m_2_2
+	# if abs(m_2_3) > abs(m_max_2): m_max_2 = m_2_3
+	# if abs(m_2_4) > abs(m_max_2): m_max_2 = m_2_4
+
+	# m_max_3 = 0
+	# m_3_1 = i3 * alpha3
+	# m_3_2 = m_3_1 + (r43x * m3 * 9.81)
+	# m_3_3 = m_3_2 + (r43x * m3 * cgAccelerationB[0]) - (r43y * m3 * cgAccelerationB[1])
+	# m_3_4 = m_3_2 + ((r23x - r43x) * f23y) + ((r23y - r43y) * f23x)
+	# if abs(m_3_1) > abs(m_max_3): m_max_3 = m_3_1
+	# if abs(m_3_2) > abs(m_max_3): m_max_3 = m_3_2
+	# if abs(m_3_3) > abs(m_max_3): m_max_3 = m_3_3
+	# if abs(m_3_4) > abs(m_max_3): m_max_3 = m_3_4
+
+	# if round(math.degrees(theta1)) == 350: print(m_1_1)
+	# if round(math.degrees(theta1)) == 350: print(m_1_2)
+	# if round(math.degrees(theta1)) == 350: print(m_1_3)
+	# if round(math.degrees(theta1)) == 179: print(m_max_1)
+
+	# Calculate bending stress for each link (Pa)
 	sigma_max_1 = m_max_1 * (link_diameter / 2) / i1
 	sigma_max_2 = m_max_2 * (link_diameter / 2) / i2
 	sigma_max_3 = m_max_3 * (link_diameter / 2) / i3
+
+	# if round(math.degrees(theta1)) == 179: print(sigma_max_1)
 
 	# Assuming stress is fluctuating from 0 to max
 	sigma_1 = sigma_max_1 * kf
@@ -487,11 +538,36 @@ def calculate_results(
 
 	# Solve for factor of safety
 	(sigma_1, sigma_2, sigma_3, n_1, n_2, n_3) = calculate_factor_of_safety(
+		a=a,
+		b=b,
+		c=c,
+		knife_offset=knife_offset,
 		theta1=theta1,
+		theta2=theta2,
+		theta3=theta3,
 		alpha1=alpha1,
 		alpha2=alpha2,
 		alpha3=alpha3,
+		cgAccelerationA=cgAccelerationA,
+		cgAccelerationB=cgAccelerationB,
+		cgAccelerationBA=cgAccelerationBA,
+		f41x=f41x,
+		f41y=f41y,
+		f21x=f21x,
+		f21y=f21y,
+		f12x=f12x,
+		f12y=f12y,
+		f32x=f32x,
+		f32y=f32y,
+		f23x=f23x,
+		f23y=f23y,
+		f43x=f43x,
+		f43y=f43y,
+		torque=torque,
 		link_diameter=link_diameter,
+		m1=m1,
+		m2=m2,
+		m3=m3,
 		i1=i1,
 		i2=i2,
 		i3=i3,
